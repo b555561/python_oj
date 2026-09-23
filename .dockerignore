@@ -1,0 +1,16 @@
+ven/
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.secret_key
+config.json
+database.db
+*.sqlite3
+_*.html
+backup_旧版/
+tools/
+test_*.py
+.vscode/
+.idea/

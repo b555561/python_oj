@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% block title %}好友 · 一起打卡{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+    {{ nan(30, 'nan-wave') | safe }}
+    <h2 style="margin:0;">邀请好友，一起刷题打卡</h2>
+  </div>
+  <p class="muted">把下面的邀请码或链接发给同学，他们注册后会自动成为你的好友。</p>
+
+  <div class="invite-box" style="margin-top:12px;">
+    <div>
+      <div class="note" style="margin-bottom:2px;">我的专属邀请码</div>
+      <span class="invite-code" id="myCode">{{ my_code }}</span>
+    </div>
+    <div style="flex:1; min-width:220px;">
+      <div class="note" style="margin-bottom:2px;">邀请链接</div>
+      <input id="inviteUrl" class="mono" readonly
+             value="{{ request.url.scheme }}://{{ request.url.netloc }}/register?invite={{ my_code }}"
+             style="width:100%; padding:7px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
+    </div>
+    <button class="btn btn-primary" onclick="copyUrl()">复制链接</button>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px; align-items:start;">
+
+  <!-- 左：好友列表 -->
+  <div class="card">
+    <h2>👥 我的好友 <span class="muted" style="font-size:14px;">（{{ friends|length }}）</span></h2>
+
+    <form onsubmit="addFriend(event)" style="display:flex; gap:8px; margin:10px 0 14px;">
+      <input id="fcode" placeholder="输入好友的邀请码" maxlength="12"
+             style="flex:1; padding:7px 10px; border:1px solid var(--line); border-radius:8px;">
+      <button class="btn btn-primary" type="submit">加好友</button>
+    </form>
+
+    {% if friends %}
+      {% for f in friends %}
+        <div class="friend-item">
+          <div class="av">{{ f.nickname[0] }}</div>
+          <div class="fi-main">
+            <div class="fi-name">
+              {{ f.nickname }}
+              <span class="pill">Lv.{{ f.level }} {{ f.level_name }}</span>
+            </div>
+            <div class="fi-sub">
+              <span class="chip-dot {% if f.today %}on{% endif %}"></span>
+              {% if f.today %}今日已打卡{% else %}今天还没打卡{% endif %}
+              · 连续 {{ f.streak }} 天 · 通过 {{ f.ac }} 题
+            </div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            {% if not f.today %}
+              <button class="btn btn-sm" onclick="nudge({{ f.id }}, this)">🔥 催打卡</button>
+            {% endif %}
+            <button class="btn btn-sm" onclick="removeFriend({{ f.id }}, '{{ f.nickname }}')">删除</button>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty" style="padding:28px;">
+        <span class="ico">🌱</span>
+        还没有好友。把上面的邀请码发给同学，或输入他们的邀请码吧！
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- 右：小队 + 动态 -->
+  <div>
+    <div class="card">
+      <h2>🏕️ 学习小队</h2>
+      <p class="muted">建个小队，和队友互相盯着打卡。</p>
+
+      <form onsubmit="createTeam(event)" style="display:flex; gap:8px; margin:10px 0;">
+        <input id="tname" placeholder="小队名称，如「早八刷题组」" maxlength="20"
+               style="flex:1; padding:7px 10px; border:1px solid var(--line); border-radius:8px;">
+        <button class="btn btn-primary" type="submit">创建</button>
+      </form>
+      <form onsubmit="joinTeam(event)" style="display:flex; gap:8px;">
+        <input id="tcode" placeholder="输入小队码加入" maxlength="8"
+               style="flex:1; padding:7px 10px; border:1px solid var(--line); border-radius:8px;">
+        <button class="btn" type="submit">加入</button>
+      </form>
+
+      <div style="margin-top:14px;">
+        {% for t in teams %}
+          <div class="team-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <strong>{{ t.name }}</strong>
+              <span class="tcode">{{ t.code }}</span>
+            </div>
+            {% if t.slogan %}<div class="note" style="margin-top:2px;">{{ t.slogan }}</div>{% endif %}
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+              <div class="bar" style="flex:1;"><i style="width:{{ t.rate }}%;"></i></div>
+              <span class="note">今日打卡 {{ t.rate }}%（{{ t.members }} 人）</span>
+            </div>
+            <div style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;">
+              {% for m in t.member_list %}
+                <span class="pill {% if m.today %}ok{% else %}warn{% endif %}">
+                  {{ m.nickname }} {% if m.today %}✓{% else %}·{% endif %}
+                </span>
+              {% endfor %}
+            </div>
+            <div class="btn-row" style="margin-top:10px;">
+              <a class="btn btn-sm" href="/team/{{ t.id }}">进入小队</a>
+              <button class="btn btn-sm" onclick="copyText('{{ t.code }}')">复制小队码</button>
+              <button class="btn btn-sm" onclick="leaveTeam({{ t.id }}, '{{ t.name }}')">退出</button>
+            </div>
+          </div>
+        {% else %}
+          <div class="note">你还没有加入任何小队。</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if notices %}
+      <div class="card" style="margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="margin:0;">🔔 消息</h2>
+          <button class="btn btn-sm" onclick="readAll()">全部已读</button>
+        </div>
+        <div style="margin-top:10px;">
+          {% for n in notices %}
+            <div class="notice-item">
+              <div style="flex:1;">
+                <div>{{ n.text }}</div>
+                <div class="nt">{{ n.from_name }} · {{ n.created_at[5:16] }}</div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="card" style="margin-top:14px;">
+      <h2>📣 好友动态</h2>
+      {% if feed %}
+        <table>
+          {% for f in feed %}
+            <tr>
+              <td style="width:16px;">
+                <span class="status-dot {% if f.status == 'accepted' %}dot-ac{% else %}dot-wrong{% endif %}"></span>
+              </td>
+              <td>
+                <strong>{{ f.nickname }}</strong>
+                {% if f.status == 'accepted' %}通过了{% else %}尝试了{% endif %}
+                <a href="/problem/{{ f.pid }}">{{ f.title }}</a>
+              </td>
+              <td class="muted" style="text-align:right; white-space:nowrap;">{{ f.created_at[5:16] }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="note">还没有好友动态。加上好友后，他们的刷题记录会出现在这里。</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if board %}
+<div class="card" style="margin-top:16px;">
+  <h2>🏅 好友本周打卡榜</h2>
+  <table>
+    <tr>
+      <th style="width:52px;">#</th><th>成员</th><th>本周打卡</th>
+      <th style="text-align:right;">连续天数</th><th style="text-align:right;">等级</th>
+    </tr>
+    {% for b in board %}
+      <tr {% if b.me %}style="background:var(--primary-soft);"{% endif %}>
+        <td>{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
+        <td>{{ b.nickname }}{% if b.me %} <span class="pill">我</span>{% endif %}</td>
+        <td><strong>{{ b.cnt }}</strong> 天</td>
+        <td style="text-align:right;">{{ b.streak }} 天</td>
+        <td style="text-align:right;">Lv.{{ b.level }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyText(t) {
+  navigator.clipboard.writeText(t).then(
+    () => toast('已复制：' + t),
+    () => toast('复制失败，请手动选中复制')
+  );
+}
+function copyUrl() { copyText(document.getElementById('inviteUrl').value); }
+
+async function addFriend(e) {
+  e.preventDefault();
+  const code = document.getElementById('fcode').value.trim();
+  if (!code) { toast('请输入邀请码'); return; }
+  const r = await post('/api/friend/add', { code: code });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) { document.getElementById('fcode').value = ''; setTimeout(() => location.reload(), 800); }
+}
+
+async function removeFriend(id, name) {
+  if (!confirm('确定要删除好友「' + name + '」吗？')) return;
+  const r = await post('/api/friend/remove', { pid: id });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+
+async function nudge(id, btn) {
+  const r = await post('/api/nudge', { pid: id });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0 && btn) { btn.disabled = true; btn.textContent = '已提醒'; }
+}
+
+async function createTeam(e) {
+  e.preventDefault();
+  const name = document.getElementById('tname').value.trim();
+  if (!name) { toast('请输入小队名称'); return; }
+  const r = await post('/api/team/create', { name: name, slogan: '一起刷题，一起进步 🌱' });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+
+async function joinTeam(e) {
+  e.preventDefault();
+  const code = document.getElementById('tcode').value.trim();
+  if (!code) { toast('请输入小队码'); return; }
+  const r = await post('/api/team/join', { code: code });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+
+async function leaveTeam(id, name) {
+  if (!confirm('确定退出小队「' + name + '」吗？')) return;
+  const r = await post('/api/team/leave', { pid: id });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+
+async function readAll() {
+  const r = await post('/api/notice/read', {});
+  if (!r) return;
+  toast(r.msg);
+  setTimeout(() => location.reload(), 600);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,11 @@
+# PyOJ 耘码 · 运行环境依赖
+# 生成方式：pip list 锁定当前已验证可运行的版本
+# 安装：python -m pip install -r requirements.txt
+
+fastapi==0.141.1
+uvicorn==0.53.0
+jinja2==3.1.6
+python-multipart==0.0.32
+pydantic==2.13.5
+requests==2.34.2
+starlette==1.6.0

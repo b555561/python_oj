@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% from "_hezi.html" import hezi, hezi_say %}
+{% block title %}首页 · PyOJ{% endblock %}
+{% block content %}
+
+<!-- ============ 主视觉：苗小序的菜园养成系统 ============ -->
+<div class="hero">
+  <div>
+    <div class="hero-mascots">
+      {{ nan(76, 'nan-wave') | safe }}
+      {{ hezi(46, 'nan-wave') | safe }}
+    </div>
+    <div class="hero-title">🌾 苗小序的菜园养成</div>
+    <div class="hero-sub">
+      打卡刷题攒下能量 → 翻地播种浇水 → 收成拿去果蔬摊卖钱或进厨房做菜，
+      <br>再把做好的菜发到学习圈换回更多能量，一整条田园闭环 🌱
+    </div>
+    <div class="hero-stats">
+      <span class="hero-stat">⚡ 能量 {{ energy }}</span>
+      <span class="hero-stat">🪙 金币 {{ coins }}</span>
+      <span class="hero-stat">🥬 菜篮 {{ basket | sum(attribute='count') }}</span>
+      <span class="hero-stat">🏆 本季 {{ season.title }}</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="hero-garden">
+      {% for p in garden %}
+      <div class="mini-plot {% if p.locked %}locked{% endif %}">
+        {% if p.locked %}
+          <div class="mp-e">🔒</div>
+          <div class="mp-n">第 {{ p.slot }} 块</div>
+          <div class="mp-s">升级解锁</div>
+        {% elif p.ready %}
+          <div class="mp-e">{{ p.crop_emoji }}</div>
+          <div class="mp-n">{{ p.crop_name }}</div>
+          <div class="mp-s" style="color:#b45309;font-weight:700;">可以收啦！</div>
+          <div class="bar green"><i style="width:100%"></i></div>
+        {% elif p.state == 'growing' %}
+          <div class="mp-e">🌱</div>
+          <div class="mp-n">{{ p.crop_name }}</div>
+          <div class="mp-s">{{ p.left_text }}</div>
+          <div class="bar green"><i style="width:{{ p.progress }}%"></i></div>
+        {% elif p.state == 'plowed' %}
+          <div class="mp-e">🟫</div>
+          <div class="mp-n">已翻地</div>
+          <div class="mp-s">等待播种</div>
+        {% else %}
+          <div class="mp-e">🟫</div>
+          <div class="mp-n">空地</div>
+          <div class="mp-s">待开垦</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="muted" style="margin-top:8px;">
+      已解锁 {{ unlocked }} / {{ total_slots }} 块地 · 等级越高地越多
+    </div>
+  </div>
+</div>
+
+<!-- ============ 四个显眼大按钮 ============ -->
+<div class="big-actions">
+  <a class="big-btn big-farm" href="/farm">
+    <span class="bb-e">🥬</span>
+    <span class="bb-t">我的菜园</span>
+    <span class="bb-s">翻地 · 播种 · 浇水 · 收获</span>
+  </a>
+  <a class="big-btn big-market" href="/market">
+    <span class="bb-e">🧺</span>
+    <span class="bb-t">耘野果蔬摊</span>
+    <span class="bb-s">卖菜换金币 · 经管科普</span>
+  </a>
+  <a class="big-btn big-kitchen" href="/kitchen">
+    <span class="bb-e">🍳</span>
+    <span class="bb-t">厨房</span>
+    <span class="bb-s">做菜 · 食品科普 · 分享</span>
+  </a>
+  <a class="big-btn big-shop" href="/shop">
+    <span class="bb-e">🪴</span>
+    <span class="bb-t">种子商店</span>
+    <span class="bb-s">积分换稀有种子与肥料</span>
+  </a>
+</div>
+
+<!-- ============ 种子商店入口 ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:8px;">
+    {{ hezi(34, 'nan-wave') | safe }}
+    <h2 style="margin:0;">种子商店 · 用积分换点好货</h2>
+    <a class="btn btn-sm" style="margin-left:auto;" href="/shop">进入商店 →</a>
+  </div>
+  <p class="muted" style="margin:6px 0 12px;">
+    稀有种子播种时选用（七彩番茄收获 ×2、黄金稻种生长 −40%、沙瓤西瓜 +50%），
+    肥料在菜园对地块使用（速长 / 壮苗 / 催熟）。
+  </p>
+  <div class="shop-strip">
+    {% for it in items %}
+    <div class="mini-item">
+      <div class="mi-e">{{ it.emoji }}</div>
+      <div style="flex:1; min-width:0;">
+        <div class="mi-n">{{ it.name }} <span class="mi-p">⚡{{ it.price }}</span></div>
+        <div class="mi-d">{{ it.effect }}{% if it.own %} · 已有 {{ it.own }}{% endif %}</div>
+      </div>
+      <button class="btn btn-sm {% if it.afford %}btn-primary{% endif %}"
+              onclick="buyItem('{{ it.key }}')" {% if not it.afford %}disabled{% endif %}>
+        兑换
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ============ 仪表盘 ============ -->
+<div class="grid grid-4" style="margin-top:16px;">
+  <div class="stat"><div class="num">{{ s.ac }}/{{ s.total_problems }}</div><div class="label">已通过题目</div></div>
+  <div class="stat"><div class="num">{{ s.streak }}</div><div class="label">连续打卡（天）</div></div>
+  <div class="stat"><div class="num">{{ s.wrongs }}</div><div class="label">待攻克错题</div></div>
+  <div class="stat accent"><div class="num">Lv.{{ lv.level }}</div><div class="label">{{ lv.name }}</div></div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <h2>今日打卡</h2>
+  <p class="muted">每天打卡 +10 能量，连续打卡越久，菜园开得越旺。</p>
+  <button class="btn btn-primary" onclick="doCheckin(this)" {% if s.checked_today %}disabled{% endif %}>
+    {% if s.checked_today %}✅ 今日已打卡{% else %}📅 打卡领能量{% endif %}
+  </button>
+  <a class="btn" href="/checkin">查看打卡日历</a>
+  <a class="btn" href="/problems">去刷题</a>
+</div>
+
+<div class="card">
+  <h2>各分类进度</h2>
+  {% for c in progress %}
+  <div style="margin-bottom:10px;">
+    <div style="display:flex; justify-content:space-between; font-size:14px;">
+      <span>{{ c.category }}</span>
+      <span class="muted">{{ c.solved }}/{{ c.total }}</span>
+    </div>
+    <div class="bar green"><i style="width:{{ c.percent }}%"></i></div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>最近提交</h2>
+  {% if recent %}
+    {% for r in recent %}
+    <div class="prow">
+      <span class="status-dot {% if r.status == 'accepted' %}dot-ac{% elif r.status == 'wrong' %}dot-wrong{% else %}dot-none{% endif %}"></span>
+      <a class="tt" href="/problem/{{ r.id }}">{{ r.title }}</a>
+      <span class="badge badge-{{ 'easy' if r.difficulty == 1 else ('medium' if r.difficulty == 2 else 'hard') }}">
+        {{ '简单' if r.difficulty == 1 else ('中等' if r.difficulty == 2 else '困难') }}
+      </span>
+      <span class="muted">{{ r.created_at[5:16] }}</span>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty"><span class="ico">🌱</span>还没有提交记录，去题库开始第一题吧</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function buyItem(key, n) {
+  const r = await post('/api/shop/buy', { key: key, n: n || 1 });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+</script>
+{% endblock %}

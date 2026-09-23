@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}我的收藏 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin:0 0 4px;">⭐ 我的收藏</h2>
+  <p class="muted">收藏你觉得值得反复练习的题目。</p>
+</div>
+
+<div class="card">
+  {% if rows %}
+    {% for p in rows %}
+      <div class="prow">
+        <span class="idx">#{{ p.id }}</span>
+        <span class="status-dot {% if p.solved %}dot-ac{% else %}dot-none{% endif %}"></span>
+        <a class="tt" href="/problem/{{ p.id }}">{{ p.title }}</a>
+        <div class="meta">
+          <span class="badge badge-{{ p.difficulty }}">{{ p.diff_text }}</span>
+          <span class="tag">{{ p.category }}</span>
+        </div>
+        <button class="btn btn-sm" onclick="toggleFav({{ p.id }}, this)">★ 取消收藏</button>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <span class="ico">⭐</span>
+      还没有收藏任何题目。<br><a href="/problems">去题库挑几道</a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

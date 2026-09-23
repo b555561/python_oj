@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}设置 · Python 刷题平台{% endblock %}
+{% block content %}
+
+{% from "_nong.html" import nan %}
+<div class="card">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+    {{ nan(32, 'nan-wave') | safe }}
+    <h2 style="margin:0;">⚙️ 设置</h2>
+  </div>
+  <p class="muted">配置 DeepSeek API Key 后，苗小序就能陪你刷题啦。</p>
+
+  {% if saved %}<div class="alert ok" style="margin-top:12px;">设置已保存</div>{% endif %}
+
+  <form method="post" action="/settings" style="margin-top:16px;">
+    <div class="field">
+      <label>DeepSeek API Key</label>
+      <input type="text" name="api_key" placeholder="{% if has_key %}已保存 Key（留空则不修改）{% else %}sk-xxxxxxxxxxxxxxxx{% endif %}"
+             autocomplete="off">
+      <p class="muted" style="margin-top:6px;">
+        Key 会保存在项目根目录的 <code class="mono">config.json</code> 中（仅本机可见）。
+        也可以设置环境变量 <code class="mono">DEEPSEEK_API_KEY</code>。
+      </p>
+    </div>
+
+    <div class="field">
+      <label style="display:flex; align-items:center; gap:8px;">
+        <input type="checkbox" name="ai_enabled" {% if ai_enabled %}checked{% endif %}
+               style="width:auto;">
+        启用苗小序（AI 助教）
+      </label>
+      <p class="muted" style="margin-top:6px;">
+        没填 Key 时，苗小序会自动进入 <b>预设问答演示模式</b>：用内置答案库回答，不联网、不调用接口。
+        填入 Key 后自动切回 DeepSeek 真实对话。
+      </p>
+    </div>
+
+    <button class="btn btn-primary" type="submit">保存设置</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>去哪里拿 Key？</h3>
+  <ol class="muted" style="font-size:14px; line-height:1.9;">
+    <li>打开 DeepSeek 开放平台 <span class="mono">platform.deepseek.com</span></li>
+    <li>进入「API Keys」页面，创建一个新 Key（以 <span class="mono">sk-</span> 开头）</li>
+    <li>复制后粘贴到上面的输入框，保存即可</li>
+  </ol>
+  <p class="muted">提示：账户需要有余额才能调用。新用户通常有赠送额度，用完后按量计费。</p>
+</div>
+
+<div class="card">
+  <h3>经验 / 能量规则</h3>
+  <table>
+    <tr><th>行为</th><th style="width:90px; text-align:right;">经验</th>
+        <th style="width:90px; text-align:right;">能量 ⚡</th></tr>
+    <tr><td>首次通过一道题</td><td style="text-align:right;">+30</td><td style="text-align:right;">+8</td></tr>
+    <tr><td>再次通过已解过的题</td><td style="text-align:right;">+5</td><td style="text-align:right;">+2</td></tr>
+    <tr><td>每日打卡</td><td style="text-align:right;">+10</td><td style="text-align:right;">+10</td></tr>
+    <tr><td>测验 / 认证达标</td><td style="text-align:right;">+50</td><td style="text-align:right;">+30</td></tr>
+    <tr><td>学习圈发帖（每天前 3 篇）</td><td style="text-align:right;">—</td><td style="text-align:right;">+5</td></tr>
+    <tr><td>学习圈评论（每天前 5 条）</td><td style="text-align:right;">—</td><td style="text-align:right;">+2</td></tr>
+    <tr><td>帖子被点赞</td><td style="text-align:right;">—</td><td style="text-align:right;">+1</td></tr>
+    <tr><td>菜园翻地 / 浇水</td><td style="text-align:right;">—</td>
+        <td style="text-align:right; color:#b45309;">-5 / -8</td></tr>
+    <tr><td>收获作物</td><td style="text-align:right;">—</td>
+        <td style="text-align:right; color:#15803d;">+18 ~ +165</td></tr>
+    <tr><td>发布菜肴到学习圈</td><td style="text-align:right;">—</td>
+        <td style="text-align:right; color:#15803d;">+40 ~ +230</td></tr>
+    <tr><td>果蔬摊卖菜</td><td style="text-align:right;">🪙 +12 ~ +150</td>
+        <td style="text-align:right;">—</td></tr>
+  </table>
+  <p class="muted" style="margin-top:10px;">
+    能量在 <a href="/farm">菜园</a> 里用来种菜；收成可以拿去
+    <a href="/market">果蔬摊</a> 卖成金币（2 金币 = 1 能量），或进
+    <a href="/kitchen">厨房</a> 做成菜发布到学习圈换能量。
+  </p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}限时测验 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin:0 0 4px;">🎯 组一套测验</h2>
+  <p class="muted">选择难度、分类和题量，系统会随机抽题生成限时测验。</p>
+
+  <form class="form-inline" style="margin-top:16px;" onsubmit="startQuiz(event)">
+    <div class="field" style="flex:1; min-width:120px;">
+      <label>难度</label>
+      <select id="difficulty">
+        <option value="">全部难度</option>
+        <option value="easy">入门</option>
+        <option value="medium">进阶</option>
+        <option value="hard">挑战</option>
+      </select>
+    </div>
+    <div class="field" style="flex:1; min-width:140px;">
+      <label>分类</label>
+      <select id="category">
+        <option value="">全部分类</option>
+        {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field" style="flex:1; min-width:110px;">
+      <label>题量</label>
+      <select id="count">
+        <option value="5">5 题</option>
+        <option value="10" selected>10 题</option>
+        <option value="15">15 题</option>
+        <option value="20">20 题</option>
+      </select>
+    </div>
+    <div class="field" style="flex:1; min-width:110px;">
+      <label>时长（分钟）</label>
+      <select id="minutes">
+        <option value="10">10 分钟</option>
+        <option value="20" selected>20 分钟</option>
+        <option value="30">30 分钟</option>
+        <option value="60">60 分钟</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">开始测验</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>🗂 历史测验</h2>
+  {% if history %}
+    <table>
+      <tr><th>测验</th><th style="width:110px;">成绩</th><th style="width:80px;">结果</th><th style="width:110px;">日期</th><th style="width:70px;"></th></tr>
+      {% for h in history %}
+        <tr>
+          <td>{{ h.title }}</td>
+          <td>{{ h.correct }} / {{ h.total }}</td>
+          <td>
+            {% if h.finished_at %}
+              {% if h.passed %}<span class="badge badge-easy">通过</span>{% else %}<span class="badge badge-hard">未达标</span>{% endif %}
+            {% else %}
+              <span class="badge badge-gray">进行中</span>
+            {% endif %}
+          </td>
+          <td class="muted">{{ h.started_at[5:16] }}</td>
+          <td>
+            {% if h.finished_at %}
+              <a class="btn btn-sm" href="/quiz/{{ h.id }}/result">查看</a>
+            {% else %}
+              <a class="btn btn-sm btn-primary" href="/quiz/{{ h.id }}">继续</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty" style="padding:24px;"><span class="ico">🎯</span>还没有测验记录</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function startQuiz(e) {
+  e.preventDefault();
+  const r = await post('/api/quiz/start', {
+    count: parseInt(document.getElementById('count').value),
+    difficulty: document.getElementById('difficulty').value,
+    category: document.getElementById('category').value,
+    minutes: parseInt(document.getElementById('minutes').value)
+  });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  location.href = '/quiz/' + r.data.quiz_id;
+}
+</script>
+{% endblock %}

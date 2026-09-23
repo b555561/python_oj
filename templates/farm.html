@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% from "_mascot.html" import stage %}
+{% from "_energy_help.html" import energy_help %}
+{% block title %}苗小序的菜园{% endblock %}
+{% block content %}
+
+<!-- ============ 页头：只留「动画 + 能量值 + 操作」，不要气泡/说明/色块 ============ -->
+<div class="sec-top">
+  {{ stage('farm', 88, sm=true) | safe }}
+  <div class="sec-top-main">
+    <span class="energy-tag">⚡ 能量 {{ energy }}</span>
+    {% if ready %}<span class="pill warn">{{ ready }} 块地可收获</span>{% endif %}
+    {{ energy_help() | safe }}
+  </div>
+  <div class="sec-top-act">
+    <button class="btn btn-primary btn-sm" onclick="harvestAll()" {% if not ready %}disabled{% endif %}>
+      🧺 一键收获
+    </button>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:10px; align-items:start;">
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <h2 style="margin:0;">🌱 作物图鉴</h2>
+      <a class="btn btn-sm" style="margin-left:auto;" href="/shop">🪴 种子商店 →</a>
+    </div>
+    <p class="muted" style="margin:4px 0 10px;">播种时消耗能量；想要加成就去种子商店兑换稀有种子 🌈</p>
+    {% for c in shop %}
+      <div class="crop-row {% if c.locked %}locked{% endif %}">
+        <div class="ce">{{ c.emoji }}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="cname">{{ c.name }}
+            {% if c.locked %}<span class="pill">Lv.{{ c.lv }} 解锁</span>
+            {% elif not c.afford %}<span class="pill warn">能量不够</span>{% endif %}
+          </div>
+          <div class="cmeta">{{ c.desc }} · 种子 ⚡{{ c.cost }} · {{ c.grow }} 分钟成熟 · 收获 ⚡{{ c.reward }}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-weight:700; color:#b45309;">+{{ c.reward - c.cost }}</div>
+          <div class="cmeta">净赚</div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2>🧺 我的菜篮</h2>
+    {% if basket %}
+      <div style="margin-top:8px;">
+        {% for b in basket %}
+          <span class="basket-item"><span class="be">{{ b.emoji }}</span>{{ b.name }} × {{ b.count }}</span>
+        {% endfor %}
+      </div>
+      <p class="note" style="margin-top:10px;">收获的作物会一直留在菜篮里，是你坚持的证明 🌾</p>
+    {% else %}
+      <div class="empty" style="padding:28px;">
+        <span class="ico">🧺</span>
+        还没收获过作物。<br>先翻地、播种，等它熟了就能收啦。
+      </div>
+    {% endif %}
+
+    <h3 style="margin-top:18px;">🌱 苗小序的种植小贴士</h3>
+    <ul class="muted" style="font-size:14px; line-height:1.9; padding-left:20px;">
+      <li>打卡拿到的能量可以直接拿来浇水，睡一觉起来菜就长好了。</li>
+      <li>急着收获？多浇几次水，每次顶 10 分钟。</li>
+      <li>贵的作物周期长但净赚更多，适合睡前种下。</li>
+      <li>等级越高解锁的地越多，最多 6 块同时开工。</li>
+    </ul>
+  </div>
+</div>
+
+
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h2 style="margin:0;">🌾 我的地（{{ unlocked }}/{{ total_slots }} 块已解锁）</h2>
+    <span class="note">等级越高，解锁的地越多</span>
+  </div>
+
+  <div class="garden" style="margin-top:14px;">
+    {% for p in garden %}
+      {% set st = 'ready' if p.ready else p.state %}
+      <div class="plot {{ st }} {% if p.locked %}locked{% endif %}">
+        <div class="slot-no">{{ p.slot }}</div>
+        <div class="soil">
+          {% if p.locked %}🔒
+          {% elif p.ready %}{{ p.crop_emoji }}
+          {% elif p.state == 'growing' %}{% if p.progress < 40 %}🌱{% elif p.progress < 80 %}🌿{% else %}{{ p.crop_emoji }}{% endif %}
+          {% elif p.state == 'plowed' %}🟫
+          {% else %}·{% endif %}
+        </div>
+
+        {% if p.locked %}
+          <div class="pname">未解锁</div>
+          <div class="pmeta">继续升级来开垦</div>
+        {% elif p.ready %}
+          <div class="pname">{{ p.crop_name }} 熟啦！</div>
+          <div class="pmeta">快收获，不然要烂在地里</div>
+          <div class="acts">
+            <button class="btn btn-sm btn-primary" onclick="harvest({{ p.slot }})">🧺 收获</button>
+          </div>
+        {% elif p.state == 'growing' %}
+          <div class="pname">{{ p.crop_emoji }} {{ p.crop_name }}</div>
+          <div class="bar"><i style="width:{{ p.progress }}%"></i></div>
+          <div class="pmeta">{{ p.progress }}% · 还需 {{ p.left_text }}</div>
+          {% if p.buff_label %}<div class="pmeta" style="color:#7C3AED; font-weight:700;">{{ p.buff_label }}</div>{% endif %}
+          <div class="acts">
+            <button class="btn btn-sm" onclick="water({{ p.slot }})">💧 浇水 ⚡8</button>
+          </div>
+          {% if ferts %}
+          <div style="margin-top:6px;">
+            <select id="fert{{ p.slot }}" class="select-sm">
+              {% for f in ferts %}
+              <option value="{{ f.key }}">{{ f.emoji }} {{ f.name }}（{{ f.effect }}）×{{ f.own }}</option>
+              {% endfor %}
+            </select>
+            <div class="acts" style="margin-top:6px;">
+              <button class="btn btn-sm btn-success" onclick="fertilize({{ p.slot }})">🌿 施肥</button>
+            </div>
+          </div>
+          {% else %}
+          <div class="pmeta" style="margin-top:6px;">
+            <a href="/shop" class="muted">去种子商店买点肥料 →</a>
+          </div>
+          {% endif %}
+        {% elif p.state == 'plowed' %}
+          <div class="pname">已翻好</div>
+          <div class="pmeta">挑个种子种下去</div>
+          <select id="sel{{ p.slot }}">
+            {% for c in shop %}
+              {% if not c.locked %}
+                <option value="{{ c.key }}">{{ c.emoji }} {{ c.name }}（⚡{{ c.cost }} · {{ c.grow }}分钟 · 收{{ c.reward }}）</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          {% if rare %}
+          <select id="seed{{ p.slot }}" class="select-sm" style="margin-top:6px;">
+            <option value="">🌱 普通种子（不加成）</option>
+            {% for r in rare %}
+              <option value="{{ r.key }}">{{ r.emoji }} {{ r.name }}（{{ r.effect }}）</option>
+            {% endfor %}
+          </select>
+          {% endif %}
+          <div class="acts">
+            <button class="btn btn-sm btn-primary" onclick="plant({{ p.slot }})">🌱 播种</button>
+            <button class="btn btn-sm" onclick="resetPlot({{ p.slot }})">闲置</button>
+          </div>
+        {% else %}
+          <div class="pname">空地</div>
+          <div class="pmeta">还没开垦</div>
+          <div class="acts">
+            <button class="btn btn-sm" onclick="plow({{ p.slot }})">⛏️ 翻地 ⚡5</button>
+          </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+
+<!-- ============ 收获之后的两条路（放在页面底部，给上方卡片让位） ============ -->
+<div class="card" style="margin-top:16px;">
+  <h2 style="margin:0;">🛤️ 收获之后，往哪儿走？</h2>
+  <p class="note" style="margin-top:4px;">菜篮里的收成有两条出路，选一条（或者两条都试试）。</p>
+
+  <div class="branch-nav" style="margin-top:12px;">
+    <a href="/market">
+      <span class="be">🧺</span>
+      <span>
+        <div class="bt">支线 A · 耘野果蔬摊</div>
+        <div class="bs">按今日行情卖成金币，冲财富榜；每单送一条管理/金融小科普</div>
+      </span>
+    </a>
+    <a href="/kitchen">
+      <span class="be">🍳</span>
+      <span>
+        <div class="bt">支线 B · 厨房</div>
+        <div class="bs">做成菜肴，学食品科学；发布到学习圈换大把能量</div>
+      </span>
+    </a>
+  </div>
+
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:12px;">
+    <span class="basket-item" style="background:#fef3c7; border-color:#fde68a;">
+      <span class="be">🪙</span>金币 {{ coins }}
+    </span>
+    {% if basket %}
+      {% for b in basket %}
+        <span class="basket-item"><span class="be">{{ b.emoji }}</span>{{ b.name }} × {{ b.count }}</span>
+      {% endfor %}
+    {% else %}
+      <span class="note">菜篮还是空的，收一茬就能开工了。</span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function act(url, payload, okMsg) {
+  const r = await post(url, payload);
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+
+function plow(slot)      { act('/api/farm/plow', { pid: slot }, ''); }
+function water(slot)     { act('/api/farm/water', { pid: slot }, ''); }
+function harvest(slot)   { act('/api/farm/harvest', { pid: slot }, ''); }
+function harvestAll()    { act('/api/farm/harvest-all', {}, ''); }
+function plant(slot) {
+  const crop = document.getElementById('sel' + slot).value;
+  const seedEl = document.getElementById('seed' + slot);
+  act('/api/farm/plant', { pid: slot, crop: crop, seed: seedEl ? seedEl.value : '' }, '');
+}
+function fertilize(slot) {
+  const el = document.getElementById('fert' + slot);
+  if (!el || !el.value) { toast('先去种子商店兑换肥料'); return; }
+  act('/api/shop/use', { key: el.value, pid: slot }, '');
+}
+function resetPlot(slot) {
+  toast('这块地已经翻好了，选个种子种下去吧');
+}
+</script>
+{% endblock %}

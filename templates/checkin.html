@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}每日打卡 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card" style="text-align:center; padding:32px 24px;">
+  <div style="font-size:40px;">🔥</div>
+  <h2 style="margin:8px 0 4px;">已连续打卡 {{ streak }} 天</h2>
+  <p class="muted">累计打卡 {{ total }} 天 · 每次获得 10 经验 + ⚡10 能量</p>
+  <div style="margin-top:16px;">
+    {% if checked_today %}
+      <button class="btn btn-success" disabled style="font-size:15px; padding:10px 28px;">✅ 今日已打卡</button>
+    {% else %}
+      <button class="btn btn-primary" onclick="doCheckin(this)" style="font-size:15px; padding:10px 28px;">立即打卡</button>
+    {% endif %}
+  </div>
+  <p class="note" style="margin-top:14px;">
+    当前能量 <strong style="color:#b45309;">⚡ {{ energy }}</strong>
+    —— 拿去 <a href="/farm">苗小序的菜园</a> 翻地、播种、浇水吧 🌾
+    {% if ready_crops %}（有 {{ ready_crops }} 块地熟了！）{% endif %}
+  </p>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px;">
+  <div class="card">
+    <h2>📅 打卡日历（最近 5 周）</h2>
+    <div class="weekhead">
+      <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+    </div>
+    <div class="calendar">
+      {% for d in cal %}
+        <div class="cell {% if d.done %}done{% endif %} {% if d.today %}today{% endif %} {% if d.future %}future{% endif %}"
+             title="{{ d.day }}">
+          {{ d.n }}
+        </div>
+      {% endfor %}
+    </div>
+    <p class="muted" style="margin-top:12px;">绿色方块表示当天已打卡。</p>
+  </div>
+
+  <div class="card">
+    <h2>🏅 近 30 天打卡榜</h2>
+    {% if board %}
+      <table>
+        <tr><th style="width:44px;">#</th><th>昵称</th><th style="text-align:right;">打卡天数</th></tr>
+        {% for b in board %}
+          <tr>
+            <td>{% if loop.index == 1 %}🥇{% elif loop.index == 2 %}🥈{% elif loop.index == 3 %}🥉{% else %}{{ loop.index }}{% endif %}</td>
+            <td>{{ b.nickname }}</td>
+            <td style="text-align:right;"><strong>{{ b.cnt }}</strong></td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="empty" style="padding:24px;"><span class="ico">🌱</span>还没有人打卡，成为第一个吧！</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if wall %}
+<div class="card" style="margin-top:16px;">
+  <h2>👥 好友今日打卡</h2>
+  <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:10px;">
+    {% for w in wall %}
+      <div class="friend-item" style="margin:0; width:calc(50% - 4px);">
+        <div class="av">{{ w.nickname[0] }}</div>
+        <div class="fi-main">
+          <div class="fi-name">{{ w.nickname }}</div>
+          <div class="fi-sub">连续 {{ w.streak }} 天</div>
+        </div>
+        {% if w.today %}
+          <span class="pill ok">✓ 已打卡</span>
+        {% else %}
+          <button class="btn btn-sm" onclick="nudgeFromWall({{ w.id }}, this)">催一下</button>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <p class="note" style="margin-top:10px;">
+    想和更多人一起打卡？到 <a href="/friends">好友页</a> 邀请同学，或建个学习小队。
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function nudgeFromWall(id, btn) {
+  const r = await post('/api/nudge', { pid: id });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0 && btn) { btn.disabled = true; btn.textContent = '已提醒'; }
+}
+</script>
+{% endblock %}

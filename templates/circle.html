@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% from "_mascot.html" import stage %}
+{% block title %}学习圈 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card nan-card">
+  <div style="display:flex; gap:14px; align-items:center;">
+    {{ stage('circle', 64) | safe }}
+    <div style="flex:1; min-width:200px;">
+      <h2 style="margin:0;">学习圈</h2>
+      <div class="muted">分享你的刷题经验、笔记和踩过的坑 —— 已经被记录 {{ stat.posts }} 篇帖子、{{ stat.comments }} 条评论。</div>
+    </div>
+  </div>
+</div>
+
+{% if user %}
+<div class="card" style="margin-top:14px;">
+  <h2>✍️ 发一条</h2>
+  <form onsubmit="publish(event)">
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <input id="ptitle" placeholder="标题，比如「我是怎么搞懂列表推导式的」" maxlength="40"
+             style="flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--line); border-radius:8px;">
+      <select id="pcat" style="padding:8px 10px; border:1px solid var(--line); border-radius:8px;">
+        {% for c in cats %}<option>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <textarea id="pcontent" rows="5" placeholder="写点什么……（支持换行，5~3000 字）"
+              style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;"></textarea>
+    <div style="margin-top:10px; display:flex; align-items:center; gap:10px;">
+      <button class="btn btn-primary" type="submit">发布</button>
+      <span class="note">发布可得 ⚡{{ 5 }} 能量（每天前 3 篇）</span>
+    </div>
+  </form>
+</div>
+{% else %}
+<div class="card" style="margin-top:14px;">
+  <div class="empty" style="padding:24px;">
+    <span class="ico">✍️</span>
+    <a href="/login">登录</a> 后即可发帖、点赞和评论。
+  </div>
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:14px;">
+  <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:6px;">
+    <a class="cat-tab {% if not category %}on{% endif %}" href="/circle">全部</a>
+    {% for c in cats %}
+      <a class="cat-tab {% if category == c %}on{% endif %}" href="/circle?category={{ c }}">{{ c }}</a>
+    {% endfor %}
+    <form onsubmit="search(event)" style="margin-left:auto; display:flex; gap:6px;">
+      <input id="q" value="{{ q }}" placeholder="搜索关键词"
+             style="padding:6px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
+      <button class="btn btn-sm" type="submit">搜索</button>
+    </form>
+  </div>
+
+  {% if posts %}
+    {% for p in posts %}
+      <div class="post-card">
+        <a class="ptitle" href="/post/{{ p.id }}">{{ p.icon }} {{ p.title }}</a>
+        <div class="pmeta">
+          <strong>{{ p.nickname }}</strong>
+          <span class="pill">Lv.{{ p.lv }}</span>
+          <span class="pill">{{ p.category }}</span>
+          <span>{{ p.time }}</span>
+        </div>
+        <div class="pbrief">{{ p.brief }}</div>
+        <div class="pacts">
+          <button class="icon-btn {% if p.liked %}on{% endif %}" onclick="like({{ p.id }}, this)">
+            {% if p.liked %}❤️{% else %}🤍{% endif %} <span class="n">{{ p.likes }}</span>
+          </button>
+          <a class="icon-btn" href="/post/{{ p.id }}">💬 {{ p.comments }}</a>
+          {% if p.mine %}
+            <button class="icon-btn" onclick="delPost({{ p.id }})">🗑️ 删除</button>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty" style="padding:36px;">
+      <span class="ico">🌱</span>
+      这里还很安静。写下第一篇学习分享吧！
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function search(e) {
+  e.preventDefault();
+  const q = document.getElementById('q').value.trim();
+  location.href = '/circle' + (q ? '?q=' + encodeURIComponent(q) : '');
+}
+
+async function publish(e) {
+  e.preventDefault();
+  const title = document.getElementById('ptitle').value.trim();
+  const content = document.getElementById('pcontent').value.trim();
+  const category = document.getElementById('pcat').value;
+  const r = await post('/api/circle/post', { title, content, category });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+
+async function like(id, btn) {
+  const r = await post('/api/circle/like', { pid: id });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  const d = r.data;
+  btn.classList.toggle('on', d.liked);
+  btn.innerHTML = (d.liked ? '❤️' : '🤍') + ' <span class="n">' + d.likes + '</span>';
+}
+
+async function delPost(id) {
+  if (!confirm('确定删除这篇帖子吗？')) return;
+  const r = await post('/api/circle/delete', { pid: id });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+</script>
+{% endblock %}

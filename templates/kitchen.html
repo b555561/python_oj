@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% from "_hezi.html" import hezi, hezi_say %}
+{% from "_mascot.html" import stage %}
+{% from "_energy_help.html" import energy_help %}
+{% block title %}厨房 · 把收成做成菜{% endblock %}
+{% block content %}
+
+<!-- ============ 页头：只留「动画 + 能量值」 ============ -->
+<div class="sec-top">
+  {{ stage('kitchen', 88, sm=true) | safe }}
+  <div class="sec-top-main">
+    <span class="energy-tag">⚡ 能量 {{ energy }}</span>
+    {{ energy_help() | safe }}
+  </div>
+</div>
+
+{{ hezi_say("别急着生吃呀～做成菜能换更多能量，还能学到真东西。\n"
+            "每道菜出锅，我都给你讲一条食品科学：为什么番茄要放油炒、为什么豆浆会假沸……\n"
+            "做完记得发布到学习圈，让同学也闻闻香 🍽️", 40, 'compact') | safe }}
+
+<!-- ============ 菜谱卡片 ============ -->
+<div class="card" style="margin-top:10px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h2 style="margin:0;">📖 菜谱</h2>
+    <span class="note">等级越高，解锁的菜越讲究</span>
+  </div>
+
+  <div class="recipe-grid" style="margin-top:14px;">
+    {% for r in recipes %}
+      <div class="recipe {% if r.locked %}locked{% endif %}">
+        <div class="re">{{ r.emoji }}</div>
+        <div class="rname">{{ r.name }}</div>
+        <div class="rdesc">{{ r.desc }}</div>
+
+        <div class="ring">
+          {% for n in r.need_list %}
+            <span class="ing {% if n.have >= n.count %}ok{% else %}miss{% endif %}">
+              {{ n.emoji }}{{ n.name }} {{ n.have }}/{{ n.count }}
+            </span>
+          {% endfor %}
+        </div>
+
+        <div class="rget">发布可得 ⚡{{ r.energy }}</div>
+
+        <div class="racts">
+          {% if r.locked %}
+            <button class="btn btn-sm" disabled>Lv.{{ r.lv }} 解锁</button>
+          {% elif r.can %}
+            <button class="btn btn-sm btn-primary" onclick="cook('{{ r.key }}')">🍳 开火</button>
+          {% else %}
+            <button class="btn btn-sm" disabled>食材不够</button>
+          {% endif %}
+        </div>
+
+        <div class="sci-line">🔬 {{ r.science.title }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ============ 食材库存 ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h2 style="margin:0;">🧺 灶台上的食材</h2>
+    <a class="btn btn-sm" href="/farm">去菜园补货</a>
+  </div>
+  {% if basket %}
+    <div class="pantry" style="margin-top:10px;">
+      {% for b in basket %}
+        <span>{{ b.emoji }} {{ b.name }} × {{ b.count }}</span>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty" style="padding:26px;">
+      <span class="ico">🧺</span>
+      食材柜是空的。去 <a href="/farm">菜园</a> 收点东西，就能开火啦。
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============ 我的菜肴 ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h2 style="margin:0;">🍽️ 我的作品</h2>
+    <span class="note">每道菜只能发布一次，发布后永久留在菜谱里</span>
+  </div>
+
+  {% if dishes %}
+    <div class="dish-grid" style="margin-top:12px;">
+      {% for d in dishes %}
+        <div class="dish">
+          <div class="de">{{ d.emoji }}</div>
+          <div class="dname">{{ d.name }}</div>
+          <div class="dmeta">{{ d.time }}</div>
+          <div class="dacts">
+            {% if d.published %}
+              <a class="btn btn-sm" href="/post/{{ d.post_id }}">查看帖子</a>
+            {% else %}
+              <button class="btn btn-sm btn-primary"
+                      onclick="openPublish({{ d.id }}, '{{ d.name }}', '{{ d.emoji }}', {{ d.energy }})">
+                🚀 发布
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty" style="padding:30px;">
+      <span class="ico">🍽️</span>
+      还没做过菜。挑一份够料的菜谱，点「开火」试试。
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============ 厨房台账 + 支线切换（移到页面底部，给上方卡片让位） ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">🍳 厨房 · 我的台账</h2>
+    <span class="pill">🍽️ 做过 {{ stat.dishes }} 道</span>
+    <span class="pill ok">已发布 {{ stat.published }} 道</span>
+  </div>
+  <div class="note" style="margin-top:6px;">
+    做一道菜 → 学一条食品科学 → 发布到
+    <a href="/circle?category=田园食光">学习圈「田园食光」</a> → 换回大把能量。
+  </div>
+</div>
+
+<div class="branch-nav" style="margin-top:12px;">
+  <a href="/farm">
+    <span class="be">🌾</span>
+    <span><div class="bt">① 菜园收获</div><div class="bs">翻地播种浇水，收进菜篮</div></span>
+  </a>
+  <a href="/market">
+    <span class="be">🧺</span>
+    <span><div class="bt">② 支线 A：耘野果蔬摊</div><div class="bs">卖菜换金币 · 学管理与金融</div></span>
+  </a>
+  <a class="on" href="/kitchen">
+    <span class="be">🍳</span>
+    <span><div class="bt">② 支线 B：厨房</div><div class="bs">做菜发学习圈 · 学食品科学</div></span>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function cook(key) {
+  const r = await post('/api/kitchen/cook', { dish: key });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  const d = r.data, s = d.science || {};
+  showTip({
+    emoji: d.emoji, tag: '食品科学', kind: 'food',
+    title: s.title, body: s.body, sub: `${d.name} 出锅了！`,
+    foot: `<div class="tip-sub">发布到学习圈可得 ⚡${d.energy} 点能量</div>`,
+    link: `<button class="btn btn-sm btn-primary"
+             onclick="closeModal(); afterCook(${d.id}, '${d.name}', '${d.emoji}', ${d.energy})">
+             🚀 发布到学习圈</button>`
+  });
+}
+
+function afterCook(id, name, emoji, energy) {
+  openPublish(id, name, emoji, energy);
+}
+
+function openPublish(id, name, emoji, energy) {
+  openModal(`
+    <div class="tip-card food">
+      <div class="tip-emoji">${emoji}</div>
+      <h3 class="tip-title">发布「${esc(name)}」</h3>
+      <div class="tip-sub">发布到学习圈「🍽️ 田园食光」，可得 ⚡${energy} 点能量（每道菜限一次）</div>
+      <div style="text-align:left; margin-top:10px;">
+        <input id="pubTitle" maxlength="40" placeholder="帖子标题（可留空）"
+               style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px;">
+        <textarea id="pubNote" rows="4" maxlength="500" placeholder="想说的话：做菜心得、今天学了什么…"
+                  style="width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px;"></textarea>
+      </div>
+      <div class="tip-actions">
+        <button class="btn" onclick="closeModal()">再想想</button>
+        <button class="btn btn-primary" onclick="doPublish(${id})">🚀 发布</button>
+      </div>
+    </div>`);
+}
+
+async function doPublish(id) {
+  const title = (document.getElementById('pubTitle') || {}).value || '';
+  const note = (document.getElementById('pubNote') || {}).value || '';
+  const r = await post('/api/kitchen/publish', { pid: id, title: title, note: note });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  closeModal();
+  toast(r.msg);
+  setTimeout(() => location.reload(), 900);
+}
+</script>
+{% endblock %}

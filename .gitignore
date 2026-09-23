@@ -1,0 +1,43 @@
+# ============ 虚拟环境与缓存 ============
+ven/
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+node_modules/
+
+# ============ 敏感信息（绝不上传！） ============
+# 注意：gitignore 不支持行尾注释，注释必须独占一行，否则整行会被当成文件名模式
+.secret_key
+config.json
+tools/push_config.json
+*.env
+.env
+
+# ============ 运行时数据 ============
+# 数据库不上传：main.py 启动时会自动建表 + 灌入 34 道题
+database.db
+database.db-journal
+*.sqlite
+*.sqlite3
+
+# ============ 本地预览快照（体积大，可随时重新生成） ============
+# 必须写成 /_*.html 限定根目录！
+# templates/ 下的 _nav.html / _mascot.html / _hezi.html 等 Jinja 宏模板
+# 同样以 _ 开头，写成 _*.html 会把它们一起排除，网站直接 500。
+/_*.html
+_offline/
+_snapshots/
+
+# ============ 旧版备份 ============
+backup_旧版/
+
+# ============ 编辑器与系统 ============
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% from "_hezi.html" import hezi, hezi_say %}
+{% from "_nong.html" import nan %}
+{% block title %}耕耘种菜大赛 · PyOJ{% endblock %}
+{% block content %}
+
+<!-- ============ 赛季主视觉 ============ -->
+<div class="contest-hero">
+  <div style="display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+    {{ nan(56, 'nan-wave') | safe }}
+    <div style="flex:1; min-width:240px;">
+      <div>
+        <span class="season-chip">🏆 第 {{ season.index + 1 }} 季 · {{ season.key }}</span>
+        <span class="season-chip">⏳ 剩 {{ season.days_left }} 天</span>
+      </div>
+      <div class="season-title">{{ season.title }}</div>
+      <div class="season-goal">🎯 本季任务：{{ season.goal }}</div>
+      <div style="margin-top:10px;" class="theme-crop">
+        <span class="tc-e">{{ season.crop_emoji }}</span>
+        <span>主推作物：{{ season.crop_name }}</span>
+        <span class="muted" style="font-weight:400;">
+          （收获它额外 +20 分/份 · 刷「{{ season.cat }}」题额外 +14 分/道）
+        </span>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      {{ hezi(46, 'nan-wave') | safe }}
+      <div class="muted" style="max-width:220px; font-size:12.5px;">{{ season.tip }}</div>
+    </div>
+  </div>
+
+  <div class="btn-row" style="margin-top:14px;">
+    {% if not joined %}
+      <button class="btn btn-primary" id="joinBtn" onclick="joinContest()">🌱 报名参赛</button>
+    {% else %}
+      <button class="btn btn-success" onclick="claimReward()" id="claimBtn"
+              {% if entry.claimed %}disabled{% endif %}>
+        {% if entry.claimed %}✅ 已领奖（{{ entry.award }}）{% else %}🎁 结算领奖{% endif %}
+      </button>
+    {% endif %}
+    <a class="btn" href="/farm">去菜园种菜</a>
+    <a class="btn" href="/problems?category={{ season.cat }}">刷「{{ season.cat }}」题</a>
+    <a class="btn" href="/checkin">今日打卡</a>
+    <a class="btn" href="/shop">种子商店</a>
+  </div>
+</div>
+
+<!-- ============ 我的战绩 ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">📊 我的战绩</h2>
+    <span class="badge badge-blue">{{ mine.rank_name }}</span>
+    {% if mine.goal_done %}
+      <span class="pill ok">✅ 本季任务已完成</span>
+    {% else %}
+      <span class="pill warn">任务进行中：还需打卡 {{ season.need_checkin - mine.days if season.need_checkin > mine.days else 0 }} 天 / 主题题 {{ season.need_problems - mine.theme_ac if season.need_problems > mine.theme_ac else 0 }} 道</span>
+    {% endif %}
+    {% if joined and rank.rank %}
+      <span class="energy-tag" style="margin-left:auto;">当前第 {{ rank.rank }} 名 / 共 {{ rank.players }} 人</span>
+    {% elif joined %}
+      <span class="muted" style="margin-left:auto;">已报名，等你攒够第一分 🌱</span>
+    {% else %}
+      <span class="muted" style="margin-left:auto;">还没报名，点上方按钮即可参赛</span>
+    {% endif %}
+  </div>
+
+  <div class="score-grid" style="margin-top:14px;">
+    <div class="score-card">
+      <div class="sc-n">{{ mine.learn }}</div>
+      <div class="sc-l">📚 学习分</div>
+      <div class="muted" style="font-size:12.5px;">
+        打卡 {{ mine.days }} 天 · 通过 {{ mine.ac }} 题（主题 {{ mine.theme_ac }} 道）
+      </div>
+      <div class="bar sc-bar"><i style="width:{{ [mine.learn, 300] | min * 100 // 300 }}%"></i></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-n">{{ mine.farm }}</div>
+      <div class="sc-l">🧺 耕耘分</div>
+      <div class="muted" style="font-size:12.5px;">
+        收获 {{ mine.harvest }} 次 · 主推作物 {{ mine.theme_crop }} 份 · ⚡{{ mine.energy }}
+      </div>
+      <div class="bar green sc-bar"><i style="width:{{ [mine.farm, 300] | min * 100 // 300 }}%"></i></div>
+    </div>
+    <div class="score-card">
+      <div class="sc-n">{{ mine.grow }}</div>
+      <div class="sc-l">🌿 作物成长值</div>
+      <div class="muted" style="font-size:12.5px;">菜园里正在生长的作物进度总和</div>
+      <div class="bar amber sc-bar"><i style="width:{{ [mine.grow, 600] | min * 100 // 600 }}%"></i></div>
+    </div>
+  </div>
+
+  <div class="stat accent" style="margin-top:12px; text-align:center;">
+    <div class="num">🏆 {{ mine.total }} 分</div>
+    <div class="label">本季总积分 · 成长等级「{{ mine.rank_name }}」</div>
+  </div>
+</div>
+
+<!-- ============ 榜单 ============ -->
+<div class="card" style="margin-top:16px;">
+  <h2>🌾 参赛作物榜单</h2>
+  <p class="muted">按「学习 + 耕耘 + 作物成长值」的总分排名，赛季结束按名次发放奖励。</p>
+  {% if board %}
+    {% for r in board %}
+    <div class="board-row {% if user and r.user_id == user.id %}me{% endif %}">
+      <div class="br-rank">{{ r.medal }}</div>
+      <div class="br-av">{{ r.nickname[0] | upper }}</div>
+      <div class="br-main">
+        <div class="br-name">
+          {{ r.nickname }}
+          <span class="muted" style="font-weight:400;">· Lv.{{ r.level }} {{ r.lv_name }}</span>
+          {% if r.claimed %}<span class="pill ok">{{ r.award }}</span>{% endif %}
+        </div>
+        <div class="br-sub">{{ r.rank_name }} · 学习 {{ r.learn }} · 耕耘 {{ r.farm }} · 成长 {{ r.grow }}</div>
+      </div>
+      <div class="br-crop" title="本季主推作物：{{ r.crop_name }}">{{ r.crop_emoji }}</div>
+      <div class="br-score">{{ r.total }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty"><span class="ico">🌱</span>这一季还没有人报名，做第一个开荒的人吧！</div>
+  {% endif %}
+</div>
+
+<!-- ============ 奖励规则 ============ -->
+<div class="card">
+  <h2>🎁 赛季奖励</h2>
+  <div class="reward-grid">
+    {% for rw in rewards %}
+    <div class="reward-card">
+      <div class="rw-r">{{ rw.range }}</div>
+      <div class="rw-t">{{ rw.title }}</div>
+      <div class="rw-e">⚡ {{ rw.energy }} 能量</div>
+      <div class="rw-i">{% for i in rw['items'] %}{{ i }}<br>{% endfor %}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px;">
+  <div class="card">
+    <h3>🌱 成长等级对照</h3>
+    {% for need, name in ranks %}
+    <div style="display:flex; justify-content:space-between; font-size:14px; padding:3px 0;">
+      <span>{{ name }}</span><span class="muted">{{ need }} 分以上</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <h3>📖 计分规则</h3>
+    <div style="font-size:14px; line-height:1.9;">
+      <div>📅 每打卡一天 <b>+20</b></div>
+      <div>✅ 本周每通过一道题 <b>+6</b></div>
+      <div>🎯 本周每通过一道本季主题题 <b>额外 +14</b></div>
+      <div>🧺 每收获一次 <b>+8</b>，每 1 点收获能量 <b>+0.12</b></div>
+      <div>🍅 每收获一份主推作物 <b>+20</b></div>
+      <div>🌿 菜园作物生长进度 <b>按百分比计入</b></div>
+    </div>
+    {% if inv %}
+      <div class="backpack" style="margin-top:10px;">
+        {% for it in inv %}<span class="bp">{{ it.emoji }} {{ it.name }} ×{{ it.count }}</span>{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function joinContest() {
+  const r = await post('/api/contest/join', {});
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+
+async function claimReward() {
+  const btn = document.getElementById('claimBtn');
+  if (btn) { btn.disabled = true; }
+  const r = await post('/api/contest/claim', {});
+  if (!r) { if (btn) btn.disabled = false; return; }
+  if (r.code !== 0) {
+    toast(r.msg);
+    if (btn) btn.disabled = false;
+    return;
+  }
+  const d = r.data;
+  showTip({
+    emoji: '🏆', tag: '耕耘种菜大赛 · 结算', kind: 'finance',
+    title: d.award,
+    sub: '本季排名 第 ' + d.rank + ' 名 · 总积分 ' + d.total,
+    body: '能量 +' + d.gain + '\n' + (d.items && d.items.length ? '道具：' + d.items.join('、') : '继续加油，下季再战！') +
+          '\n\n奖励已经进背包啦，稀有种子播种时选用，肥料在菜园使用。',
+    link: '<a class="btn btn-sm" href="/shop">去种子商店</a>'
+  });
+  setTimeout(() => location.reload(), 1600);
+}
+</script>
+{% endblock %}

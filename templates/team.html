@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% block title %}{{ t.name }} · 学习小队{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:12px;">
+  <a href="/friends" class="muted">← 返回好友页</a>
+</div>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+    <div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        {{ nan(34, 'nan-wave') | safe }}
+        <h2 style="margin:0;">{{ t.name }}</h2>
+      </div>
+      {% if t.slogan %}<p class="muted" style="margin:6px 0 0;">{{ t.slogan }}</p>{% endif %}
+      <p class="note" style="margin:6px 0 0;">队长：{{ owner_name }} · 创建于 {{ t.created_at[:10] }}</p>
+    </div>
+    <div style="text-align:right;">
+      <div class="note" style="margin-bottom:2px;">小队码</div>
+      <span class="tcode" style="font-size:18px;">{{ t.code }}</span>
+      <div style="margin-top:8px;">
+        <button class="btn btn-sm" onclick="copyCode()">复制邀请码</button>
+        {% if mine %}
+          <button class="btn btn-sm" onclick="leaveTeam()">退出小队</button>
+        {% else %}
+          <button class="btn btn-sm btn-primary" onclick="joinTeam()">加入小队</button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+      <strong>今日打卡进度</strong>
+      <span class="muted">{{ rate }}% · {{ members|length }} 人小队</span>
+    </div>
+    <div class="bar" style="height:10px;"><i style="width:{{ rate }}%;"></i></div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <h2>🌾 队员打卡情况</h2>
+  <table>
+    <tr>
+      <th style="width:52px;">状态</th><th>队员</th><th>等级</th>
+      <th style="text-align:right;">连续打卡</th>
+      <th style="text-align:right;">入队时间</th>
+    </tr>
+    {% for m in members %}
+      <tr>
+        <td>
+          {% if m.today %}<span class="pill ok">✓ 已打卡</span>
+          {% else %}<span class="pill warn">未打卡</span>{% endif %}
+        </td>
+        <td>
+          <strong>{{ m.nickname }}</strong>
+          {% if m.id == t.owner_id %}<span class="pill">队长</span>{% endif %}
+          {% if m.id == user.id %}<span class="pill">我</span>{% endif %}
+        </td>
+        <td>Lv.{{ m.level }} {{ m.level_name }}</td>
+        <td style="text-align:right;">{{ m.streak }} 天</td>
+        <td class="muted" style="text-align:right;">{{ m.joined_at[:10] }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+  <p class="note" style="margin-top:12px;">
+    小提示：把小队码发给同学，他们在好友页输入即可加入；每天来这里看看谁还没打卡，互相催一催 🔥
+  </p>
+</div>
+
+{% if invitable %}
+<div class="card" style="margin-top:16px;">
+  <h2>✉️ 邀请好友加入</h2>
+  <p class="muted">他们会收到一条带小队码的邀请消息。</p>
+  {% for f in invitable %}
+    <div class="friend-item">
+      <div class="av">{{ f.nickname[0] }}</div>
+      <div class="fi-main">
+        <div class="fi-name">{{ f.nickname }} <span class="pill">Lv.{{ f.level }}</span></div>
+        <div class="fi-sub">连续 {{ f.streak }} 天 · 通过 {{ f.ac }} 题</div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="inviteFriend({{ f.id }}, this)">邀请</button>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const TID = {{ t.id }};
+const TCODE = '{{ t.code }}';
+const MINE = {{ 'true' if mine else 'false' }};
+
+function copyCode() {
+  navigator.clipboard.writeText(TCODE).then(
+    () => toast('小队码已复制：' + TCODE),
+    () => toast('复制失败，请手动选中')
+  );
+}
+
+async function joinTeam() {
+  const r = await post('/api/team/join', { code: TCODE });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+
+async function leaveTeam() {
+  if (!confirm('确定退出这个小队吗？')) return;
+  const r = await post('/api/team/leave', { pid: TID });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.href = '/friends', 700);
+}
+
+async function inviteFriend(fid, btn) {
+  const r = await post('/api/team/invite', { pid: TID, code: String(fid) });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0 && btn) { btn.disabled = true; btn.textContent = '已邀请'; }
+}
+</script>
+{% endblock %}

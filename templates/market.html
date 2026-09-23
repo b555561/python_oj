@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% from "_hezi.html" import hezi, hezi_say %}
+{% from "_mascot.html" import stage %}
+{% from "_energy_help.html" import energy_help %}
+{% block title %}耘野果蔬摊{% endblock %}
+{% block content %}
+
+<!-- ============ 页头：只留「动画 + 金币 / 能量值 + 操作」 ============ -->
+<div class="sec-top">
+  {{ stage('market', 88, sm=true) | safe }}
+  <div class="sec-top-main">
+    <span class="coin-tag">🪙 金币 {{ sum.coins }}</span>
+    <span class="energy-tag">⚡ 能量 {{ energy }}</span>
+    {{ energy_help() | safe }}
+  </div>
+  <div class="sec-top-act">
+    <button class="btn btn-primary btn-sm" onclick="sellAll()" {% if not stock %}disabled{% endif %}>
+      💰 一键清空菜篮
+    </button>
+  </div>
+</div>
+
+{{ hezi_say("收成到手啦！卖给街坊能换金币，攒够了还能换回能量继续种地。\n"
+            "每成交一笔，我都给你讲一条做生意的小常识 —— 涨红跌绿，看准行情再出手 🌾", 40, 'compact') | safe }}
+
+<div class="grid grid-2" style="margin-top:10px; align-items:start;">
+  <!-- ============ 全部作物行情牌 ============ -->
+  <div class="card">
+    <h2>📋 今日价目牌</h2>
+    <p class="note" style="margin-bottom:10px;">基准价 × 当日行情，每天 0 点刷新</p>
+    <div class="price-grid">
+      {% for p in prices %}
+        <div class="price-cell">
+          <div class="pc-e">{{ p.emoji }}</div>
+          <div>{{ p.name }}</div>
+          <div class="pc-p">🪙{{ p.price }}</div>
+          <div class="pc-d {% if p.delta > 0 %}gdelta up{% elif p.delta < 0 %}gdelta down{% endif %}">
+            {% if p.delta > 0 %}+{{ p.delta }}%{% elif p.delta < 0 %}{{ p.delta }}%{% else %}持平{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ============ 金币换能量 ============ -->
+  <div class="card">
+    <h2>🔁 金币换能量</h2>
+    <p class="note">{{ rate }} 枚金币 → 1 点能量。种地需要能量，变现需要金币，怎么权衡由你决定。</p>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px;">
+      <input id="exCoins" type="number" min="0" step="{{ rate }}" value="{{ rate }}"
+             style="width:130px; padding:7px 10px; border:1px solid var(--line); border-radius:8px;">
+      <button class="btn btn-primary btn-sm" onclick="exchange()">兑换</button>
+      <button class="btn btn-sm" onclick="exchange(true)">全部兑换</button>
+    </div>
+    <p class="note" style="margin-top:10px;">
+      当前 🪙 {{ sum.coins }} 金币，最多可换 ⚡ {{ sum.coins // rate }} 点能量。
+    </p>
+  </div>
+</div>
+
+<div class="grid grid-2" style="margin-top:10px; align-items:start;">
+  <!-- ============ 最近流水 ============ -->
+  <div class="card">
+    <h2>🧾 最近成交</h2>
+    {% if sales %}
+      <table style="margin-top:8px;">
+        <tr><th>货</th><th>数量</th><th style="text-align:right;">单价</th>
+            <th style="text-align:right;">收入</th><th style="text-align:right;">时间</th></tr>
+        {% for s in sales %}
+          <tr>
+            <td>{{ s.emoji }} {{ s.name }}</td>
+            <td>×{{ s.count }}</td>
+            <td style="text-align:right;">🪙{{ s.unit }}</td>
+            <td style="text-align:right;"><strong>🪙{{ s.income }}</strong></td>
+            <td class="muted" style="text-align:right;">{{ s.time }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="empty" style="padding:24px;"><span class="ico">🧾</span>还没有成交记录</div>
+    {% endif %}
+  </div>
+
+  <!-- ============ 财富榜 ============ -->
+  <div class="card">
+    <h2>🏆 摊主财富榜</h2>
+    {% if board %}
+      <table style="margin-top:8px;">
+        <tr><th style="width:52px;">名次</th><th>摊主</th><th style="text-align:right;">金币</th></tr>
+        {% for b in board %}
+          <tr>
+            <td>{% if b.rank == 1 %}🥇{% elif b.rank == 2 %}🥈{% elif b.rank == 3 %}🥉{% else %}{{ b.rank }}{% endif %}</td>
+            <td>{{ b.nickname }}</td>
+            <td style="text-align:right;"><strong>🪙{{ b.coins }}</strong></td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% else %}
+      <div class="empty" style="padding:24px;"><span class="ico">🏆</span>还没有人开张，你就是第一位摊主</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ 今日行情：可出售的货 ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+    <h2 style="margin:0;">📦 我的货（今日行情）</h2>
+    <span class="note">价格每天都变，看准了再卖</span>
+  </div>
+
+  {% if stock %}
+    <div class="goods" style="margin-top:14px;">
+      {% for s in stock %}
+        <div class="goods-card {% if s.delta >= 15 %}hot{% endif %}">
+          <div class="ge">{{ s.emoji }}</div>
+          <div class="gname">{{ s.name }}</div>
+          <div class="gprice">🪙 {{ s.price }} / 份</div>
+          <div class="gdelta {% if s.delta > 0 %}up{% elif s.delta < 0 %}down{% endif %}">
+            {% if s.delta > 0 %}▲ 涨 {{ s.delta }}%{% elif s.delta < 0 %}▼ 跌 {{ -s.delta }}%{% else %}— 持平{% endif %}
+          </div>
+          <div class="gcount">库存 {{ s.count }} 份 · 全卖 {{ s.total }} 金币</div>
+          <div class="gacts">
+            <button class="btn btn-sm" onclick="sell('{{ s.crop }}', 1)">卖 1 份</button>
+            <button class="btn btn-sm btn-primary" onclick="sell('{{ s.crop }}', {{ s.count }})">全卖</button>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty" style="padding:34px;">
+      <span class="ico">🧺</span>
+      菜篮空空，摊上没有货。<br>
+      去 <a href="/farm">菜园</a> 收几茬，或者先翻地种上再说～
+    </div>
+  {% endif %}
+</div>
+
+<!-- ============ 摊位名片（移到页面底部，给上方卡片让位） ============ -->
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <h2 style="margin:0;">🧺 耘野果蔬摊 · 我的摊位</h2>
+    <span class="pill">{{ sum.stall.icon }} {{ sum.stall.name }}</span>
+  </div>
+  <div class="bar" style="margin-top:9px; max-width:400px;">
+    <i style="width:{{ sum.stall.progress }}%"></i>
+  </div>
+  <div class="note" style="margin-top:6px;">
+    累计收入 <strong>{{ sum.income }}</strong> 金币 · 成交 {{ sum.orders }} 单 · 卖出 {{ sum.goods }} 份
+    {% if sum.stall.next %}
+      · 再赚 {{ sum.stall.next_need - sum.income }} 金币升级「{{ sum.stall.next }}」
+    {% else %}
+      · 已是最高等级，掌柜好样的 🏆
+    {% endif %}
+  </div>
+</div>
+
+<!-- ============ 两条支线切换（移到底部） ============ -->
+<div class="branch-nav" style="margin-top:12px;">
+  <a href="/farm">
+    <span class="be">🌾</span>
+    <span><div class="bt">① 菜园收获</div><div class="bs">翻地播种浇水，收进菜篮</div></span>
+  </a>
+  <a class="on" href="/market">
+    <span class="be">🧺</span>
+    <span><div class="bt">② 支线 A：耘野果蔬摊</div><div class="bs">卖菜换金币 · 学管理与金融</div></span>
+  </a>
+  <a href="/kitchen">
+    <span class="be">🍳</span>
+    <span><div class="bt">② 支线 B：厨房</div><div class="bs">做菜发学习圈 · 学食品科学</div></span>
+  </a>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function sell(crop, count) {
+  const r = await post('/api/market/sell', { crop: crop, count: count });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  const d = r.data, t = d.tip || {};
+  showTip({
+    emoji: d.emoji, tag: t.tag, kind: 'finance',
+    title: t.title, body: t.body,
+    sub: `卖出 ${d.count} 份${d.name} · 进账 🪙${d.income}（单价 🪙${d.unit}）`,
+    foot: '<div class="tip-sub">禾籽：做生意和做学问，道理常常是同一条 🌾</div>',
+    link: '<button class="btn btn-sm" onclick="closeModal(); location.reload()">继续摆摊</button>'
+  });
+}
+
+async function sellAll() {
+  const r = await post('/api/market/sell-all', {});
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  const t = r.data.tip || {};
+  showTip({
+    emoji: '🧺', tag: t.tag, kind: 'finance',
+    title: t.title, body: t.body,
+    sub: r.msg,
+    foot: '<div class="tip-sub">禾籽：清仓也是一门学问，落袋为安 💰</div>',
+    link: '<button class="btn btn-sm" onclick="closeModal(); location.reload()">继续摆摊</button>'
+  });
+}
+
+async function exchange(all) {
+  const el = document.getElementById('exCoins');
+  const coins = all ? {{ sum.coins }} : parseInt(el.value || '0', 10);
+  if (!coins || coins <= 0) { toast('请输入要兑换的金币数'); return; }
+  const r = await post('/api/market/exchange', { coins: coins });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 800);
+}
+</script>
+{% endblock %}

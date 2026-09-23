@@ -1,0 +1,43 @@
+{# 页面头部的「苗小序」助手舞台 —— 按页面加载不同无限循环动画
+   用法：{% from "_mascot.html" import stage %}
+        {{ stage('farm', 88) | safe }}
+        {{ stage('farm', 88, sm=true) | safe }}   {# sm：整体缩到约 73%，占位同步变小不留白 #}
+   说明：形象本身仍是 _nong.html 里的苗小序 SVG，
+        动作全部由 static/css/style.css 里的 @keyframes 驱动（无外部动画库）。
+        mode: farm 耕地浇水 / market 招手踱步 / kitchen 切菜翻炒 / circle 捧书阅读
+#}
+{% from "_nong.html" import nan %}
+
+{% macro stage(mode='farm', size=88, sm=false) %}
+<div class="ms-wrap{% if sm %} sm{% endif %}">
+<div class="ms-stage ms-{{ mode }}" role="img" aria-label="苗小序">
+  <span class="ms-ground"></span>
+  <span class="ms-body">{{ nan(size, '') | safe }}</span>
+
+  {% if mode == 'farm' %}
+  {# 耕地 → 浇水 #}
+  <span class="ms-prop p-hoe">⛏️</span>
+  <span class="ms-prop p-can">🪣</span>
+  <span class="ms-prop p-drop">💧</span>
+  <span class="ms-prop p-clod">🟤</span>
+
+  {% elif mode == 'market' %}
+  {# 招手 + 来回踱步 #}
+  <span class="ms-prop p-wave">👋</span>
+  <span class="ms-prop p-basket">🧺</span>
+
+  {% elif mode == 'kitchen' %}
+  {# 切菜 → 翻炒做菜 #}
+  <span class="ms-prop p-knife">🔪</span>
+  <span class="ms-prop p-pan">🍳</span>
+  <span class="ms-prop p-flame">🔥</span>
+
+  {% elif mode == 'circle' %}
+  {# 捧着书本阅读：翻书 + 低头看书 #}
+  <span class="ms-prop p-book">📖</span>
+  <span class="ms-prop p-page">📄</span>
+  <span class="ms-prop p-spark">✨</span>
+  {% endif %}
+</div>
+</div>
+{% endmacro %}

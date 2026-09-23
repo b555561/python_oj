@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}题库 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin-bottom:14px;">📚 题库 <span class="muted" style="font-weight:400;">共 {{ total }} 题</span></h2>
+  <form class="form-inline" method="get" action="/problems">
+    <div class="field" style="flex:2; min-width:180px;">
+      <label>搜索</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="题目标题或内容关键字">
+    </div>
+    <div class="field" style="flex:1; min-width:120px;">
+      <label>分类</label>
+      <select name="category">
+        <option value="">全部</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" style="flex:1; min-width:110px;">
+      <label>难度</label>
+      <select name="difficulty">
+        <option value="">全部</option>
+        <option value="easy" {% if difficulty == 'easy' %}selected{% endif %}>入门</option>
+        <option value="medium" {% if difficulty == 'medium' %}selected{% endif %}>进阶</option>
+        <option value="hard" {% if difficulty == 'hard' %}selected{% endif %}>挑战</option>
+      </select>
+    </div>
+    <div class="field" style="flex:1; min-width:110px;">
+      <label>状态</label>
+      <select name="status">
+        <option value="">全部</option>
+        <option value="solved" {% if status == 'solved' %}selected{% endif %}>已通过</option>
+        <option value="unsolved" {% if status == 'unsolved' %}selected{% endif %}>未通过</option>
+        <option value="wrong" {% if status == 'wrong' %}selected{% endif %}>错题本</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" type="submit">筛选</button>
+    <a class="btn" href="/problems">重置</a>
+  </form>
+</div>
+
+<div class="card">
+  {% if rows %}
+    {% for p in rows %}
+      <div class="prow">
+        <span class="idx">#{{ p.id }}</span>
+        <span class="status-dot {% if p.solved %}dot-ac{% elif p.wrong %}dot-wrong{% else %}dot-none{% endif %}"></span>
+        <a class="tt" href="/problem/{{ p.id }}">{{ p.title }}</a>
+        <div class="meta">
+          <span class="badge badge-{{ p.difficulty }}">{{ diff_label.get(p.difficulty, p.difficulty) }}</span>
+          <span class="tag">{{ p.category }}</span>
+          {% if p.fav %}<span title="已收藏">⭐</span>{% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <span class="ico">🔍</span>
+      没有符合条件的题目，试试放宽筛选条件。
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

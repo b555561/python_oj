@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% from "_cert_badge.html" import medal, wheat, field %}
+{% block title %}耕耘等级认证 · PyOJ 耘码{% endblock %}
+{% block content %}
+
+{# ============ 页头：田庄横幅 + 当前等级 ============ #}
+<div class="cert-hero">
+  {{ field() | safe }}
+  <div class="cert-hero-in">
+    <div class="cert-ears">
+      <span class="cert-ear left">{{ wheat(30) | safe }}</span>
+      <span class="cert-ear right">{{ wheat(30) | safe }}</span>
+    </div>
+
+    <h2 class="cert-title">耕耘等级认证</h2>
+    <p class="cert-sub">
+      一把锄头一行代码，犁过的地都会长出东西。<br>
+      等级够了、开垦的题目够了，就能下地参加认证考试。
+    </p>
+
+    <div class="cert-now">
+      <span class="cert-chip lv">
+        当前等级 Lv.{{ lv.level }} · {{ lv.name }}
+      </span>
+      <span class="cert-chip ac">
+        已开垦 {{ ac }} 道题
+      </span>
+    </div>
+
+    <div class="cert-bar" title="距离下一级的进度 {{ lv.progress }}%">
+      <div class="cert-bar-in" style="width:{{ lv.progress }}%;"></div>
+    </div>
+    <div class="cert-bar-tip muted">
+      {% if lv.maxed %}
+        已满级，整片田都是你的 🌾
+      {% else %}
+        距离下一级还需 {{ lv.need - lv.exp }} 点经验（{{ lv.progress }}%）
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ============ 等级阶梯 ============ #}
+<div class="card cert-ladder-card">
+  <h3 class="cert-h3">🌾 农职称号阶梯</h3>
+  <div class="cert-ladder">
+    {% for l in ladder %}
+    <div class="cert-step {% if l.level == lv.level %}on{% elif l.level < lv.level %}done{% endif %}">
+      <div class="cert-step-top">
+        <span class="cert-step-lv">Lv{{ l.level }}</span>
+        {% if l.level == 3 or l.level == 5 or l.level == 8 %}
+          <span class="cert-step-flag" title="该等级解锁一项认证">🌾</span>
+        {% endif %}
+      </div>
+      <div class="cert-step-name">{{ l.name }}</div>
+      <div class="cert-step-exp muted">{{ l.exp }} exp</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{# ============ 认证卡片 ============ #}
+<h3 class="cert-h3 cert-h3-main">🏅 认证考场</h3>
+{% for it in items %}
+<div class="card ct-card {% if it.owned %}owned{% elif it.ok_level and it.ok_ac %}ready{% endif %}">
+  <div class="ct-card-in">
+
+    <div class="cert-medal">
+      {{ medal('medal' if it.owned else ('target' if (it.ok_level and it.ok_ac) else 'lock'), 72) | safe }}
+    </div>
+
+    <div class="cert-main">
+      <h3 class="ct-card-name">
+        {{ it.name }}
+        {% if it.owned %}<span class="cert-owned-tag">已获得</span>{% endif %}
+      </h3>
+      <p class="cert-desc muted">{{ it.desc }}</p>
+
+      <div class="cert-badges">
+        <span class="cbadge {% if it.ok_level %}ok{% endif %}">
+          等级 Lv.{{ it.level }} {% if it.ok_level %}✓{% else %}（当前 Lv.{{ lv.level }}）{% endif %}</span>
+        <span class="cbadge {% if it.ok_ac %}ok{% endif %}">
+          开垦 {{ it.ac_need }} 题 {% if it.ok_ac %}✓{% else %}（当前 {{ it.ac_now }}）{% endif %}</span>
+        <span class="cbadge blue">{{ it.count }} 道题 · 答对 {{ it.pass }} 题及格</span>
+      </div>
+    </div>
+
+    <div class="cert-acts">
+      {% if it.owned %}
+        <div class="muted cert-act-note">
+          已于 {{ it.owned.issued_at[:10] }} 获得<br>
+          证书编号 {{ it.owned.cert_no }}
+        </div>
+        <a class="btn btn-sm btn-primary" href="/certificate/{{ it.owned.cert_no }}">查看证书</a>
+      {% elif it.ok_level and it.ok_ac %}
+        <div class="muted cert-act-note">地已整好，可以下地开考了 🌾</div>
+        <button class="btn btn-primary" onclick="startCert('{{ it.key }}', '{{ it.name }}')">开始认证考试</button>
+      {% else %}
+        <div class="muted cert-act-note">先把等级和开垦题数攒够</div>
+        <button class="btn btn-sm" disabled>条件未达成</button>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function startCert(key, name) {
+  if (!confirm('开始「' + name + '」考试？\n共需完成规定题数，答对达到及格线即可获得证书。')) return;
+  const r = await post('/api/cert/start', { pid: 0, code: key });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  location.href = '/quiz/' + r.data.quiz_id;
+}
+</script>
+{% endblock %}

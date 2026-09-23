@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan, nan_say %}
+{% from "_hezi.html" import hezi_say %}
+{% block title %}网站使用指南 · PyOJ{% endblock %}
+{% block content %}
+
+<div class="card nan-card">
+  {{ nan_say("欢迎来到 PyOJ 🌱\n这里把「刷题」和「种菜」绑在了一起：打卡刷题攒能量，\n用能量种菜、卖菜、做菜，再拿收成换回更多能量。\n下面这张地图，3 分钟带你走完全部玩法 👇", 88) | safe }}
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <h2>🚀 三步上手</h2>
+  <div class="guide-flow">
+    <span>1️⃣ 注册登录</span> → <span>2️⃣ 今日打卡 + 做一道题</span> → <span>3️⃣ 去菜园翻地播种</span>
+  </div>
+  <div class="btn-row" style="margin-top:10px;">
+    <a class="btn btn-primary" href="/register">注册账号</a>
+    <a class="btn" href="/checkin">先去打卡</a>
+    <a class="btn" href="/farm">进我的菜园</a>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <h2>🗺️ 完整玩法地图</h2>
+
+  <div class="guide-step">
+    <div class="gs-e">📅</div>
+    <div>
+      <div class="gs-t">第一步 · 每日打卡（+10 能量）</div>
+      <div class="gs-d">打开「打卡」页点一下就行，连续打卡会累计天数，日历上能看到整月记录。打卡是能量最稳定的来源。</div>
+      <div class="guide-flow"><span>打卡</span><span>+10 ⚡</span><span>连续天数 +1</span></div>
+      <a class="btn btn-sm" href="/checkin">去打卡</a>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🐍</div>
+    <div>
+      <div class="gs-t">第二步 · 刷题（首次通过 +8 能量）</div>
+      <div class="gs-d">
+        题库分 6 个分类：基础语法、字符串、列表、字典与集合、函数与递归、算法进阶。
+        在编辑器里写好函数点「提交」，系统会跑全部测试用例并告诉你哪一条没过。
+        没过的题自动进错题本，通过后就从错题本移除。
+      </div>
+      <div class="guide-flow"><span>选题</span><span>写代码</span><span>运行</span><span>提交</span><span>+8 ⚡ / +经验</span></div>
+      <div class="btn-row">
+        <a class="btn btn-sm" href="/problems">题库</a>
+        <a class="btn btn-sm" href="/wrongs">错题本</a>
+        <a class="btn btn-sm" href="/favorites">收藏夹</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🥬</div>
+    <div>
+      <div class="gs-t">第三步 · 菜园种植（能量循环的核心）</div>
+      <div class="gs-d">
+        用能量开荒：⛏️ 翻地（−5）→ 🌱 播种（按作物定价）→ 💧 浇水（−8，每次顶 10 分钟）
+        → 🧺 收获（返还更多能量）。等级越高解锁的地越多，最多 6 块同时开工。
+      </div>
+      <div class="guide-flow"><span>翻地 −5</span><span>播种</span><span>浇水 −8</span><span>收获 +能量</span></div>
+      <div class="btn-row"><a class="btn btn-sm" href="/farm">我的菜园</a></div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🧺</div>
+    <div>
+      <div class="gs-t">收获之后，两条路 · 支线 A：耘野果蔬摊</div>
+      <div class="gs-d">
+        把菜篮里的收成按当日行情卖成金币 🪙（行情每天波动 0.8~1.3 倍，涨红跌绿），
+        金币可以按 2 枚 = 1 能量的比例换回能量，摊位等级还会随累计收入提升。
+        每卖出一单都会弹一张管理学 / 金融小科普（机会成本、复利、库存周转……）。
+      </div>
+      <div class="guide-flow"><span>卖菜</span><span>得金币 🪙</span><span>兑能量 ⚡</span><span>看经管科普</span></div>
+      <div class="btn-row"><a class="btn btn-sm" href="/market">耘野果蔬摊</a></div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🍳</div>
+    <div>
+      <div class="gs-t">收获之后，两条路 · 支线 B：厨房</div>
+      <div class="gs-d">
+        用菜篮的食材做菜（13 道菜谱），出锅会弹一张食品科学小科普
+        （番茄红素是脂溶性的、豆浆会假沸、果胶加糖加酸才能凝成果酱……）。
+        做好的菜可以发布到学习圈「🍽️ 田园食光」分区，一次换回 40~230 点能量。
+      </div>
+      <div class="guide-flow"><span>选菜谱</span><span>消耗食材</span><span>看食品科普</span><span>发学习圈 +能量</span></div>
+      <div class="btn-row">
+        <a class="btn btn-sm" href="/kitchen">厨房</a>
+        <a class="btn btn-sm" href="/circle?category=田园食光">田园食光分区</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🪴</div>
+    <div>
+      <div class="gs-t">第四步 · 种子商店（积分换道具）</div>
+      <div class="gs-d">
+        用能量兑换 🌈 稀有种子（收获 ×2 / 生长 −40% / 收获 +50%，播种时选用）
+        和 💧 肥料（速长 +30 分钟、壮苗 +80 分钟、催熟立刻成熟，对地块使用）。
+      </div>
+      <div class="guide-flow"><span>攒能量</span><span>兑换道具</span><span>播种 / 施肥</span><span>收成更好</span></div>
+      <div class="btn-row"><a class="btn btn-sm" href="/shop">种子商店</a></div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🏆</div>
+    <div>
+      <div class="gs-t">第五步 · 耕耘种菜大赛（每周一季）</div>
+      <div class="gs-d">
+        每季绑定一个题库分类 + 一种主推作物（本季：{{ season.title }}，主推 {{ season.crop_emoji }}{{ season.crop_name }}）。
+        积分 = 打卡 + 本周通过题目（主题分类额外加分）+ 收获次数与能量（主推作物额外加分）+ 菜园作物成长进度。
+        赛季结束前都能报名，结算按榜单发能量和稀有种子。
+      </div>
+      <div class="guide-flow"><span>报名</span><span>打卡刷题</span><span>种主推作物</span><span>上榜领奖</span></div>
+      <div class="btn-row"><a class="btn btn-sm" href="/contest">去大赛</a></div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">👥</div>
+    <div>
+      <div class="gs-t">第六步 · 学习圈 / 好友小队</div>
+      <div class="gs-d">
+        学习圈可以发帖分享经验（发帖 +5、评论 +2、被赞 +1），还有「🍽️ 田园食光」专区放你的菜。
+        好友页能生成 8 位邀请码拉同学入伙、组队打卡、还能「催一下」偷懒的队友 🔔
+      </div>
+      <div class="guide-flow"><span>发帖 +5</span><span>评论 +2</span><span>被赞 +1</span><span>组队打卡</span></div>
+      <div class="btn-row">
+        <a class="btn btn-sm" href="/circle">学习圈</a>
+        <a class="btn btn-sm" href="/friends">好友与小队</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">📝</div>
+    <div>
+      <div class="gs-t">第七步 · 测验与认证</div>
+      <div class="gs-d">
+        「测验」会随机抽 5 道题限时作答，达标 +30 能量；
+        「认证」是一次完整的能力考试，通过后会生成一张带编号的证书，可以晒给同学看。
+      </div>
+      <div class="guide-flow"><span>随机抽题</span><span>限时作答</span><span>达标 +30 ⚡</span><span>拿证书</span></div>
+      <div class="btn-row">
+        <a class="btn btn-sm" href="/quiz">小测验</a>
+        <a class="btn btn-sm" href="/cert">能力认证</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="guide-step">
+    <div class="gs-e">🌱</div>
+    <div>
+      <div class="gs-t">卡住了？找苗小序</div>
+      <div class="gs-d">
+        AI 助教「苗小序」就在导航栏最右边，可以问语法、问思路，也能让它看你代码为什么没通过
+        （题目详情页有「🌱 讲思路」和「🌱 看看哪错了」两个按钮）。
+        田园那边的冷知识由它的搭档「禾籽」负责 🌾
+      </div>
+      <div class="btn-row"><a class="btn btn-sm" href="/ai">找苗小序聊天</a></div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  {{ hezi_say("记住这条循环就好：打卡刷题 → 攒能量 → 种菜 → 卖菜 / 做菜 → 换回更多能量。\n转起来以后，你会发现自己一边在刷 Python，一边顺手把菜园开满了 🍀", 46) | safe }}
+</div>
+
+{% endblock %}

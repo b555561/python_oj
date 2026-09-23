@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}登录 · Python 刷题平台{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="card">
+    <h1>登录</h1>
+    <p class="sub">继续你的刷题进度</p>
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <div class="field">
+        <label>用户名</label>
+        <input type="text" name="username" required autofocus placeholder="请输入用户名">
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input type="password" name="password" required placeholder="请输入密码">
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%;">登录</button>
+    </form>
+    <p class="muted" style="margin-top:16px; text-align:center;">
+      还没有账号？<a href="/register">立即注册</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

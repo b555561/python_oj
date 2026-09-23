@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}{{ p.title }} · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:12px;">
+  <a href="/problems" class="muted">← 返回题库</a>
+</div>
+
+<div class="grid grid-2" style="grid-template-columns: 1fr 1fr; align-items:start;">
+  <!-- 左侧：题面 -->
+  <div class="card">
+    <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+      <h2 style="margin:0;">#{{ p.id }} {{ p.title }}</h2>
+      <span class="badge badge-{{ p.difficulty }}">{{ diff_text }}</span>
+      <span class="tag">{{ p.category }}</span>
+    </div>
+
+    <div class="body-text">{{ p.body }}</div>
+
+    <div style="margin-top:14px;">
+      <strong>需要实现的函数：</strong>
+      <code class="mono">{{ p.func }}</code>
+    </div>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-sm" id="favBtn"
+              onclick="toggleFav({{ p.id }}, this)">{% if fav %}★ 已收藏{% else %}☆ 收藏{% endif %}</button>
+      <button class="btn btn-sm" onclick="showHint()">💡 看提示</button>
+      <button class="btn btn-sm" onclick="showSolution()">📖 参考答案</button>
+      {% if ai_on %}
+        <button class="btn btn-sm" onclick="askAI('explain')">🌱 苗小序讲思路</button>
+      {% endif %}
+    </div>
+
+    <div id="hintBox" style="display:none;" class="hint">{{ p.hint or '这道题暂时没有额外提示，试着自己先想一想～' }}</div>
+    <div id="solBox" style="display:none;" class="solution">
+      参考答案（建议先自己写完再看）：<pre class="mono">{{ p.solution }}</pre>
+    </div>
+    <div id="aiBox" style="display:none; margin-top:12px;"></div>
+
+    {% if history %}
+      <h3 style="margin-top:20px; font-size:15px;">提交记录</h3>
+      <table>
+        {% for h in history %}
+          <tr>
+            <td style="width:16px;"><span class="status-dot {% if h.status == 'accepted' %}dot-ac{% else %}dot-wrong{% endif %}"></span></td>
+            <td>{% if h.status == 'accepted' %}通过{% elif h.status == 'timeout' %}超时{% elif h.status == 'error' %}出错{% else %}未通过{% endif %}
+              <span class="muted">{{ h.passed }}/{{ h.total }}</span></td>
+            <td class="muted" style="text-align:right;">{{ h.created_at[5:16] }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+  </div>
+
+  <!-- 右侧：代码编辑器 -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h2 style="margin:0;">✍️ 你的代码</h2>
+      <span class="muted">Python 3</span>
+    </div>
+
+    <textarea id="code" class="code" spellcheck="false">{{ code }}</textarea>
+
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn" onclick="runCode()">▶ 运行测试</button>
+      <button class="btn btn-primary" onclick="submitCode()">提交答案</button>
+      <button class="btn btn-sm" onclick="resetCode()">重置</button>
+      {% if ai_on %}
+        <button class="btn btn-sm" onclick="askAI('analyze')">🌱 帮我看看哪错了</button>
+      {% endif %}
+    </div>
+
+    <div id="resultBox"></div>
+
+    <p class="muted" style="margin-top:14px; font-size:12.5px;">
+      提示：代码在独立沙箱中运行，超时 5 秒会自动终止；沙箱内不支持 import 与文件操作。
+    </p>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PID = {{ p.id }};
+const STARTER = {{ p.starter | tojson }};
+
+function getCode() { return document.getElementById('code').value; }
+
+function resetCode() {
+  document.getElementById('code').value = STARTER;
+}
+
+function showHint() {
+  const b = document.getElementById('hintBox');
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+function showSolution() {
+  const b = document.getElementById('solBox');
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+async function runCode() {
+  const box = document.getElementById('resultBox');
+  box.innerHTML = '<div class="result warn">正在运行…</div>';
+  const r = await post('/api/run', { pid: PID, code: getCode() });
+  if (!r) return;
+  if (r.code !== 0) { box.innerHTML = `<div class="result bad">${esc(r.msg)}</div>`; return; }
+  renderResult(box, r.data);
+}
+
+async function submitCode() {
+  const box = document.getElementById('resultBox');
+  box.innerHTML = '<div class="result warn">正在判题…</div>';
+  const r = await post('/api/submit', { pid: PID, code: getCode() });
+  if (!r) return;
+  if (r.code !== 0) { box.innerHTML = `<div class="result bad">${esc(r.msg)}</div>`; return; }
+  renderResult(box, r.data.result);
+
+  const d = r.data;
+  if (d.action === 'accepted') {
+    toast('🎉 通过！经验 +' + d.gained);
+    setTimeout(() => location.reload(), 1200);
+  } else {
+    toast('未通过，已收入错题本');
+  }
+}
+
+async function askAI(action) {
+  const box = document.getElementById('aiBox');
+  box.style.display = 'block';
+  box.innerHTML = '<div class="result warn">🌱 苗小序正在思考…（约需几秒）</div>';
+  const r = await post('/api/ai/chat', {
+    pid: PID, code: getCode(), action: action
+  });
+  if (!r) return;
+  if (r.code !== 0) {
+    box.innerHTML = `<div class="result bad">${esc(r.msg)}</div>`;
+    return;
+  }
+  box.innerHTML = `<div class="result nan-card" style="border-color:#cdeed0; text-align:left;">
+<strong>🌱 苗小序</strong>
+<div style="white-space:pre-wrap; margin-top:6px;">${esc(r.data.text)}</div></div>`;
+}
+</script>
+{% endblock %}

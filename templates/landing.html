@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Python 刷题平台 · 从零开始，每天进步{% endblock %}
+{% block content %}
+
+<div class="card" style="text-align:center; padding:52px 24px; background:linear-gradient(135deg,#2563eb,#3b82f6); color:#fff; border:none;">
+  <div style="font-size:44px; margin-bottom:10px;">🐍</div>
+  <h1 style="font-size:30px; margin:0 0 10px; color:#fff;">Python 刷题平台</h1>
+  <p style="font-size:16px; margin:0 auto 24px; max-width:560px; color:rgba(255,255,255,.9);">
+    33 道精心编排的题目 · 在线实时判题 · 错题本自动收录 · 每日打卡 · 限时测验 · 等级与认证
+  </p>
+  <div class="btn-row" style="justify-content:center;">
+    <a class="btn" href="/register" style="background:#fff; color:#2563eb; border-color:#fff;">免费注册</a>
+    <a class="btn" href="/login" style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.5);">已有账号，登录</a>
+    <a class="btn" href="/problems" style="background:rgba(255,255,255,.15); color:#fff; border-color:rgba(255,255,255,.5);">先看看题库</a>
+  </div>
+</div>
+
+<div class="grid grid-3" style="margin-top:16px;">
+  <div class="card">
+    <h3>📚 六大板块题库</h3>
+    <p class="muted">基础语法 / 字符串 / 列表 / 字典与集合 / 函数与递归 / 算法进阶，
+      题目由浅入深，每道都配有提示与参考答案。</p>
+  </div>
+  <div class="card">
+    <h3>⚡ 在线判题</h3>
+    <p class="muted">写完代码点「提交」，系统在独立沙箱中运行你的代码并比对多组测试用例，
+      死循环会自动超时终止。</p>
+  </div>
+  <div class="card">
+    <h3>📝 错题本</h3>
+    <p class="muted">做错的题自动进入错题本，记录错误次数与你当时的代码，
+      攻克后一键标记掌握。</p>
+  </div>
+  <div class="card">
+    <h3>🔥 每日打卡</h3>
+    <p class="muted">打卡日历记录你的坚持，连续天数一目了然，
+      每次打卡还有经验值奖励。</p>
+  </div>
+  <div class="card">
+    <h3>🎯 限时测验</h3>
+    <p class="muted">按分类和难度自由组卷，倒计时作答，交卷后立刻出成绩与逐题解析。</p>
+  </div>
+  <div class="card">
+    <h3>🏆 等级与认证</h3>
+    <p class="muted">刷题积累经验升级，满足条件可挑战初级 / 进阶 / 高级认证，
+      通过后生成专属证书。</p>
+  </div>
+</div>
+
+{% endblock %}

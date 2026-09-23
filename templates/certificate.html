@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}耕耘认证证书 · PyOJ 耘码{% endblock %}
+{% block content %}
+
+<div class="cert-card">
+  <div class="title">CERTIFICATE OF ACHIEVEMENT</div>
+  <div class="name">🌾 {{ c.name }}</div>
+  <div class="muted" style="margin-bottom:18px;">兹证明</div>
+  <div class="who"><strong>{{ c.nickname }}</strong></div>
+  <div style="margin:10px 0;">
+    已在 PyOJ 耘码的田里完成该认证规定的全部考核要求，成绩 {{ c.score }} 分，特发此证。
+  </div>
+  <div class="muted">颁发日期：{{ c.issued_at[:10] }}</div>
+  <div class="no">证书编号：{{ c.cert_no }}</div>
+  <div class="cert-seal"><span>PyOJ</span><span>认证专用</span></div>
+</div>
+
+<div class="card" style="text-align:center; margin-top:16px;">
+  <div class="btn-row" style="justify-content:center;">
+    <a class="btn btn-primary" href="/cert">返回认证中心</a>
+    <button class="btn" onclick="window.print()">🖨 打印 / 保存为 PDF</button>
+  </div>
+  <p class="muted" style="margin-top:10px;">打印时在弹窗中选择「另存为 PDF」即可保存证书。</p>
+</div>
+
+{% endblock %}

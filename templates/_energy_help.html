@@ -1,0 +1,11 @@
+{# 能量规则小图标 —— 点一下弹出「能量怎么赚 / 怎么用」
+   用法：{% from "_energy_help.html" import energy_help %}
+        {{ energy_help() | safe }}
+   依赖：static/js/energy_help.js（在 base.html 里已全局引入）
+#}
+{% macro energy_help(label='') %}
+<button type="button" class="energy-help" onclick="openEnergyHelp()"
+        title="能量怎么赚、怎么用" aria-label="查看能量使用规则">
+  <span class="eh-ic">⚡</span>{% if label %}<span class="eh-t">{{ label }}</span>{% endif %}
+</button>
+{% endmacro %}

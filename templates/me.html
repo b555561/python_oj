@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}个人中心 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="grid grid-4">
+  <div class="stat accent"><div class="num">{{ s.ac }}</div><div class="label">通过题目</div></div>
+  <div class="stat"><div class="num">{{ s.submissions }}</div><div class="label">总提交次数</div></div>
+  <div class="stat"><div class="num">{{ s.checkin_total }}</div><div class="label">累计打卡</div></div>
+  <div class="stat"><div class="num">{{ s.rate }}%</div><div class="label">题库完成度</div></div>
+</div>
+
+<div class="grid grid-2" style="margin-top:16px;">
+  <div class="card">
+    <h2>📊 板块进度</h2>
+    {% for c in progress %}
+      <div style="margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:5px;">
+          <span>{{ c.category }}</span><span class="muted">{{ c.solved }} / {{ c.total }}</span>
+        </div>
+        <div class="bar {% if c.percent == 100 %}green{% endif %}"><i style="width:{{ c.percent }}%"></i></div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card">
+    <h2>🏆 我的证书</h2>
+    {% if certs %}
+      {% for c in certs %}
+        <div class="prow">
+          <span style="font-size:20px;">🏅</span>
+          <div style="flex:1;">
+            <div>{{ c.name }}</div>
+            <div class="muted" style="font-size:12.5px;">编号 {{ c.cert_no }} · {{ c.issued_at[:10] }}</div>
+          </div>
+          <a class="btn btn-sm" href="/certificate/{{ c.cert_no }}">查看</a>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty" style="padding:24px;">
+        <span class="ico">🏆</span>
+        还没有证书，<a href="/cert">去挑战认证</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>🕘 最近提交（最近 15 条）</h2>
+  {% if recent %}
+    <table>
+      <tr><th style="width:16px;"></th><th>题目</th><th style="width:110px;">结果</th><th style="width:130px; text-align:right;">时间</th></tr>
+      {% for r in recent %}
+        <tr>
+          <td><span class="status-dot {% if r.status == 'accepted' %}dot-ac{% else %}dot-wrong{% endif %}"></span></td>
+          <td><a href="/problem/{{ r.id }}">{{ r.title }}</a></td>
+          <td>
+            {% if r.status == 'accepted' %}<span class="badge badge-easy">通过</span>
+            {% elif r.status == 'timeout' %}<span class="badge badge-medium">超时</span>
+            {% elif r.status == 'error' %}<span class="badge badge-hard">出错</span>
+            {% else %}<span class="badge badge-hard">未通过</span>{% endif %}
+          </td>
+          <td class="muted" style="text-align:right;">{{ r.created_at[5:16] }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty" style="padding:24px;"><span class="ico">📝</span>还没有提交记录</div>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>🎯 测验记录</h2>
+  {% if quizzes %}
+    <table>
+      <tr><th>测验</th><th style="width:100px;">成绩</th><th style="width:90px;">结果</th><th style="width:130px; text-align:right;">日期</th></tr>
+      {% for h in quizzes %}
+        <tr>
+          <td>{{ h.title }}</td>
+          <td>{{ h.correct }} / {{ h.total }}</td>
+          <td>{% if h.finished_at %}{% if h.passed %}<span class="badge badge-easy">通过</span>{% else %}<span class="badge badge-medium">未达标</span>{% endif %}{% else %}<span class="badge badge-gray">进行中</span>{% endif %}</td>
+          <td class="muted" style="text-align:right;">{{ h.started_at[5:16] }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty" style="padding:24px;"><span class="ico">🎯</span>还没有测验记录</div>
+  {% endif %}
+</div>
+
+{% endblock %}

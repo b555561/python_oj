@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan, nan_say %}
+{% from "_hezi.html" import hezi, hezi_say %}
+{% block title %}种子商店 · PyOJ{% endblock %}
+{% block content %}
+
+<!-- ============ 稀有种子（提到最上方） ============ -->
+<div class="card">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <h2 style="margin:0;">🌈 稀有种子</h2>
+    <span class="muted">播种时选用，给这一茬作物挂上加成</span>
+    <a class="btn btn-sm" style="margin-left:auto;" href="/farm">去菜园播种 →</a>
+  </div>
+  <div class="item-grid" style="margin-top:14px;">
+    {% for it in seeds %}
+    <div class="item-card seed">
+      <span class="ic-badge {% if it.own %}have{% endif %}">{% if it.own %}已有 {{ it.own }}{% else %}未拥有{% endif %}</span>
+      <div class="ic-e">{{ it.emoji }}</div>
+      <div class="ic-n">{{ it.name }}</div>
+      <div class="ic-k"><span class="badge badge-gray">稀有种子</span></div>
+      <div class="ic-eff">{{ it.effect }}</div>
+      <div class="ic-d">{{ it.desc }}</div>
+      <div class="ic-tip">💡 {{ it.tip }}</div>
+      <div class="ic-p">⚡ {{ it.price }}</div>
+      <div class="ic-own">兑换后可在播种时选用</div>
+      <div class="ic-acts">
+        <button class="btn btn-sm {% if it.afford %}btn-primary{% endif %}"
+                onclick="buyItem('{{ it.key }}', 1)" {% if not it.afford %}disabled{% endif %}>兑换 1</button>
+        <button class="btn btn-sm" onclick="buyItem('{{ it.key }}', 5)"
+                {% if not it.afford %}disabled{% endif %}>兑换 5</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="shop-hero">
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    {{ nan(52, 'nan-wave') | safe }}
+    {{ hezi(40, 'nan-wave') | safe }}
+    <div>
+      <div style="font-size:20px; font-weight:800;">🪴 种子商店</div>
+      <div class="muted">用打卡刷题攒下的能量（积分）兑换稀有种子和肥料，把菜园开得更旺。</div>
+    </div>
+    <span class="energy-tag" style="margin-left:auto; font-size:15px;">⚡ 当前能量 {{ energy }}</span>
+  </div>
+</div>
+
+<div class="card" style="margin-top:10px;">
+  {{ hezi_say("稀有种子要在「播种」的时候选，种下去这一茬就带加成；肥料直接撒在地里，立刻见效。\n想要哪一株长得快一点，全看你把肥料留给谁 🌿", 40, 'compact') | safe }}
+</div>
+
+
+<!-- ============ 肥料道具 ============ -->
+<div class="card">
+  <div style="display:flex; align-items:center; gap:8px;">
+    <h2 style="margin:0;">💧 肥料道具</h2>
+    <span class="muted">对正在生长的地块使用，立刻推进生长</span>
+  </div>
+  <div class="item-grid" style="margin-top:14px;">
+    {% for it in ferts %}
+    <div class="item-card fert">
+      <span class="ic-badge {% if it.own %}have{% endif %}">{% if it.own %}已有 {{ it.own }}{% else %}未拥有{% endif %}</span>
+      <div class="ic-e">{{ it.emoji }}</div>
+      <div class="ic-n">{{ it.name }}</div>
+      <div class="ic-k"><span class="badge badge-gray">肥料</span></div>
+      <div class="ic-eff">{{ it.effect }}</div>
+      <div class="ic-d">{{ it.desc }}</div>
+      <div class="ic-tip">💡 {{ it.tip }}</div>
+      <div class="ic-p">⚡ {{ it.price }}</div>
+      {% if growing_plots %}
+      <div style="margin:6px 0;">
+        <select id="slot-{{ it.key }}" class="select-sm">
+          {% for p in growing_plots %}
+          <option value="{{ p.slot }}">第 {{ p.slot }} 块 · {{ p.crop_emoji }}{{ p.crop_name }}（{{ p.progress }}%）</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <div class="ic-own">菜园里暂时没有在长的作物</div>
+      {% endif %}
+      <div class="ic-acts">
+        <button class="btn btn-sm {% if it.afford %}btn-primary{% endif %}"
+                onclick="buyItem('{{ it.key }}', 1)" {% if not it.afford %}disabled{% endif %}>兑换 1</button>
+        <button class="btn btn-sm btn-success" onclick="useFert('{{ it.key }}')"
+                {% if it.own <= 0 or not growing_plots %}disabled{% endif %}>立即使用</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <h3>🎒 我的背包</h3>
+  {% if inv %}
+    <div class="backpack">
+      {% for it in inv %}
+      <span class="bp">{{ it.emoji }} {{ it.name }} ×{{ it.count }}</span>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">背包还是空的，先兑换一件试试 👇</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>怎么赚能量？</h3>
+  <div class="btn-row">
+    <a class="btn btn-sm" href="/checkin">📅 每日打卡 +10</a>
+    <a class="btn btn-sm" href="/problems">✅ 通过题目 +8 / +2</a>
+    <a class="btn btn-sm" href="/quiz">📝 参加测验 +30</a>
+    <a class="btn btn-sm" href="/kitchen">🍳 发布菜肴 +40~230</a>
+    <a class="btn btn-sm" href="/market">🪙 卖菜换金币再兑能量</a>
+    <a class="btn btn-sm" href="/contest">🏆 大赛奖励</a>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function buyItem(key, n) {
+  const r = await post('/api/shop/buy', { key: key, n: n || 1 });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+
+async function useFert(key) {
+  const sel = document.getElementById('slot-' + key);
+  const slot = parseInt(sel ? sel.value : '0', 10);
+  if (!slot) { toast('请先选一块地'); return; }
+  const r = await post('/api/shop/use', { key: key, pid: slot });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+</script>
+{% endblock %}

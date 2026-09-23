@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Python 刷题平台{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-onboard="{{ '1' if need_onboard else '0' }}">
+
+<!-- ============ 顶部海报式轮播 Banner ============ -->
+<div class="banner" id="banner">
+  <div class="banner-track" id="bannerTrack">
+
+    <!-- 海报 A · 耕耘种菜大赛（金麦色调） -->
+    <a class="banner-card bc-contest" href="/contest">
+      <img class="bc-art" src="/static/images/banners/banner_contest.png" alt="耕耘种菜大赛" aria-hidden="true">
+      <span class="bc-veil"></span>
+
+      <div class="bc-poster">
+        <div class="bc-top">
+          <span class="bc-kicker">🏆 每周一季 · 限时开启</span>
+          <span class="bc-stamp">剩 {{ season.days_left }} 天</span>
+        </div>
+        <div class="bc-title">耕耘<em>种菜</em>大赛</div>
+        <div class="bc-desc">参与菜园种菜竞赛，培育作物、比拼作物成长等级，赢取积分与稀有种子</div>
+        <div class="bc-chips">
+          <span class="bc-go">立即参赛 <b>→</b></span>
+        </div>
+      </div>
+      <div class="bc-timer"><i></i></div>
+    </a>
+
+    <!-- 海报 B · 网站使用指南（晨雾青绿） -->
+    <a class="banner-card bc-guide" href="/guide">
+      <img class="bc-art" src="/static/images/banners/banner_guide.png" alt="网站使用指南" aria-hidden="true">
+      <span class="bc-veil"></span>
+
+      <div class="bc-poster">
+        <div class="bc-top">
+          <span class="bc-kicker">📖 新手必看 · 3 分钟看懂</span>
+        </div>
+        <div class="bc-title">网站<em>使用</em>指南</div>
+        <div class="bc-desc">从刷题打卡到开荒种菜、摆摊卖货、下厨做菜 —— 整套玩法一次讲明白</div>
+        <div class="bc-chips">
+          <span class="bc-go">开始阅读 <b>→</b></span>
+        </div>
+      </div>
+      <div class="bc-timer"><i></i></div>
+    </a>
+
+  </div>
+
+  <button class="banner-arrow prev" type="button" aria-label="上一张">‹</button>
+  <button class="banner-arrow next" type="button" aria-label="下一张">›</button>
+  <div class="banner-dots" id="bannerDots">
+    <span class="banner-dot on"></span>
+    <span class="banner-dot"></span>
+  </div>
+</div>
+
+<!-- ============ 首页 banner 下方 · 欢迎导语（小字，像注释） ============ -->
+{% if request.url.path == '/' %}
+<div class="welcome-note" id="welcomeNote" title="{{ intro }}">
+  <span class="wn-tag">🌱 导语</span>
+  <span class="wn-text">{{ intro }}</span>
+</div>
+{% endif %}
+
+<header class="topbar">
+  <div class="topbar-inner">
+  <a class="brand" href="/"><span class="logo">🐍</span> PyOJ</a>
+  <div class="userbox">
+    {% if user %}
+      <a class="me" href="/me">{{ user.nickname }}</a>
+      <span class="lvl">Lv.{{ lv.level }} · {{ lv.name }}</span>
+      <span class="energy-tag" title="能量：耕地、播种、浇水、兑换道具都要用">⚡ {{ energy }}</span>
+      <span class="coin-tag" title="金币：在果蔬摊卖菜获得">🪙 {{ coins }}</span>
+      <form method="post" action="/logout" class="inline">
+        <button class="linkbtn" type="submit">退出</button>
+      </form>
+    {% else %}
+      <a class="btn btn-sm" href="/login">登录</a>
+      <a class="btn btn-sm btn-primary" href="/register">注册</a>
+    {% endif %}
+  </div>
+
+  {% from "_nav.html" import navcard %}
+  <nav class="nav">
+    {{ navcard('/problems',  'problems',  '📘', '题库') | safe }}
+    {{ navcard('/wrongs',    'wrongs',    '📕', '错题本') | safe }}
+    {{ navcard('/favorites', 'favorites', '⭐', '收藏') | safe }}
+    {{ navcard('/checkin',   'checkin',   '📅', '打卡') | safe }}
+    {{ navcard('/farm',      'farm',      '🌱', '菜园', ready_crops) | safe }}
+    {{ navcard('/shop',      'shop',      '🪴', '种子商店') | safe }}
+    {{ navcard('/market',    'market',    '🧺', '果蔬摊') | safe }}
+    {{ navcard('/kitchen',   'kitchen',   '🍳', '厨房') | safe }}
+    {{ navcard('/contest',   'contest',   '🏆', '大赛') | safe }}
+    {{ navcard('/quiz',      'quiz',      '📝', '测验') | safe }}
+    {{ navcard('/cert',      'cert',      '🎓', '认证') | safe }}
+    {{ navcard('/friends',   'friends',   '👫', '好友', unread) | safe }}
+    {{ navcard('/circle',    'circle',    '💬', '学习圈') | safe }}
+    {{ navcard('/rank',      'rank',      '🥇', '排行榜') | safe }}
+    {{ navcard('/guide',     'guide',     '🧭', '指南') | safe }}
+    {{ navcard('/ai',        'ai',        '🌿', '苗小序') | safe }}
+  </nav>
+  </div>
+</header>
+
+<main class="container">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>PyOJ · Python 刷题平台</span>
+  <span class="muted">坚持刷题，每天进步一点点 🌾</span>
+</footer>
+
+<div class="copyright">
+  <p>©2026 PyOJ耘码项目 All Rights Reserved.</p>
+  <p>创意策划：【杨文婧】</p>
+  <p>网站代码由AI辅助开发</p>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- ============ 全局悬浮 AI 助手 · 苗小序（可拖拽，全站常驻） ============ -->
+{% from "_nong.html" import nan %}
+<div class="nan-fab" id="nanFab" role="button" tabindex="0"
+     aria-label="苗小序 AI 助手"
+     data-login="{{ '1' if user else '0' }}">
+  <span class="nf-glow"></span>
+  {{ nan(54, 'nan-wave') | safe }}
+  <span class="nf-label">苗小序</span>
+  <span class="nf-dot"></span>
+
+  {# 分板块动作道具：菜园 耕地/浇水/施肥 · 厨房 切菜/做菜 · 商店 转圈招手 #}
+  <span class="nf-props" aria-hidden="true">
+    <span class="nf-prop p-hoe">⛏️</span>
+    <span class="nf-prop p-water">🪣</span>
+    <span class="nf-prop p-fert">🧪</span>
+    <span class="nf-prop p-clod">🟤</span>
+    <span class="nf-prop p-drop">💧</span>
+    <span class="nf-prop p-grain">✨</span>
+    <span class="nf-prop p-seed">🌱</span>
+    <span class="nf-prop p-knife">🔪</span>
+    <span class="nf-prop p-cook">🍳</span>
+    <span class="nf-prop p-wave">👋</span>
+  </span>
+  <span class="nf-act" id="nfAct" aria-hidden="true"></span>
+</div>
+
+<div class="nan-panel" id="nanPanel" hidden>
+  <div class="np-head">
+    <span class="np-av">{{ nan(34, '') | safe }}</span>
+    <div class="np-tt">
+      <b>苗小序</b>
+      <span id="npState">预设问答演示模式</span>
+    </div>
+    <button class="np-min" id="npMin" type="button" aria-label="收起">－</button>
+    <button class="np-x" id="npX" type="button" aria-label="关闭">✕</button>
+  </div>
+
+  <div class="np-body" id="npBody"></div>
+
+  <div class="np-quick" id="npQuick">
+    <button type="button" data-q="列表推导式怎么写？举个例子">列表推导式</button>
+    <button type="button" data-q="while 和 for 循环该怎么选？">while / for</button>
+    <button type="button" data-q="为什么我的函数返回 None？">返回 None</button>
+    <button type="button" data-q="给我一份 Python 新手学习路线">学习路线</button>
+    <button type="button" data-q="菜园怎么玩？">菜园玩法</button>
+    <button type="button" data-q="耕耘种菜大赛怎么参加？">大赛规则</button>
+  </div>
+
+  <div class="np-input">
+    <textarea id="npText" rows="1" placeholder="问苗小序…（Ctrl + Enter 发送）"></textarea>
+    <button class="np-mic" id="npMic" type="button" title="语音输入">🎤</button>
+    <button class="np-send" id="npSend" type="button">发送</button>
+  </div>
+  <div class="np-foot" id="npFoot">拖动小图标可挪位置 · 点 ✕ 只收起弹窗</div>
+</div>
+
+<!-- ============ 登录后的每日签到弹窗（含撒落元素 + 祝福语） ============ -->
+{% if signin %}
+<div class="signin-mask" id="signinMask" hidden aria-hidden="true"
+     data-today="{{ signin.date }}">
+  <div class="signin-card" role="dialog" aria-modal="true" aria-label="每日签到">
+    <div class="sg-deco" aria-hidden="true"></div>
+    <button class="sg-x" id="sgX" type="button" aria-label="关闭">✕</button>
+
+    <div class="sg-kicker">{{ signin.season }} · {{ signin.greet_emoji }} {{ signin.date }}</div>
+    <div class="sg-mascot">{{ nan(88, 'nan-wave') | safe }}</div>
+    <div class="sg-greet">{{ signin.greet }}，<b>{{ signin.name }}</b></div>
+    <div class="sg-head">{{ signin.head }}</div>
+
+    <div class="sg-bless" id="sgBless">
+      <span class="sg-em">{{ signin.emoji }}</span><span>{{ signin.bless }}</span>
+    </div>
+    {% if signin.tip %}<div class="sg-tip">{{ signin.tip }}</div>{% endif %}
+
+    <div class="sg-stat">
+      <span>🔥 连续 <b id="sgStreak">{{ signin.streak }}</b> 天</span>
+      <span>📅 累计 {{ signin.total }} 天</span>
+      <span>🌾 {{ '今日已签到' if signin.checked else '待签到' }}</span>
+    </div>
+
+    <div class="sg-acts">
+      {% if signin.checked %}
+      <button class="sg-btn done" id="sgBtn" type="button" disabled>✅ 今日已签到</button>
+      {% else %}
+      <button class="sg-btn" id="sgBtn" type="button">🌾 签到领 ⚡{{ signin.energy }} · ✨{{ signin.xp }}</button>
+      {% endif %}
+      <button class="sg-later" id="sgLater" type="button">今日不再提醒</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ============ 首次注册后的新用户欢迎（登录不弹） ============ -->
+{% if welcome_new %}
+<div class="welcome-mask" id="welcomeMask" hidden aria-hidden="true">
+  <div class="wlc-stage welcome-card" id="wlcStage" role="dialog" aria-modal="true" aria-label="新用户欢迎">
+
+    {# 放大版苗小序：停留自我介绍 → 缩小 + 原地旋转一圈飞回悬浮位 → 亮光消散 #}
+    <div class="wlc-hero" id="wlcHero">
+      <span class="wlc-flash" id="wlcFlash" aria-hidden="true"></span>
+      {{ nan(220, 'nan-wave') | safe }}
+    </div>
+
+    {# 对话气泡：苗小序自我介绍 #}
+    <div class="wlc-bubble" id="wlcBubble" role="note">
+      <b>你好呀！我是苗小序👋！</b>欢迎问我任何问题，快来开启你的编程种田之旅吧！
+      <i class="wb-tail" aria-hidden="true"></i>
+    </div>
+
+    {# 最终版欢迎文案 #}
+    <div class="wlc-lines wlc-intro" id="wlcLines">
+      <p>是否也曾在编程学习路上迷茫彷徨？</p>
+      <p>厌倦乏味的机械刷题，渴望看得见的成长；</p>
+      <p class="wlc-hi">欢迎来到 <b>PyOJ</b> <span>✨</span></p>
+      <p>脑力作犁，代码为种。在趣味养成中打磨编程本领，开启独属于你的代码乐园！</p>
+    </div>
+
+    <div class="wlc-hint" id="wlcHint">苗小序正在向你挥手问好…</div>
+  </div>
+</div>
+{% endif %}
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/nan.js"></script>
+<script src="/static/js/signin.js"></script>
+<script src="/static/js/welcome.js"></script>
+<script src="/static/js/onboard.js"></script>
+<script src="/static/js/energy_help.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

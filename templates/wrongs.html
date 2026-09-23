@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}错题本 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h2 style="margin:0 0 4px;">📝 我的错题本</h2>
+  <p class="muted">做错的题目会自动收录在这里。攻克它们，是提升最快的方式。</p>
+</div>
+
+<div class="card">
+  {% if rows %}
+    {% for w in rows %}
+      <div class="prow" style="align-items:flex-start; flex-wrap:wrap;">
+        <span class="status-dot dot-wrong" style="margin-top:8px;"></span>
+        <div style="flex:1; min-width:260px;">
+          <a class="tt" href="/problem/{{ w.problem_id }}" style="display:block;">{{ w.title }}</a>
+          <div class="muted" style="font-size:13px;">
+            <span class="badge badge-{{ w.difficulty }}">{{ w.diff_text }}</span>
+            <span class="tag">{{ w.category }}</span>
+            错了 {{ w.times }} 次 · 最近 {{ w.last_at[5:16] }}
+          </div>
+          {% if w.last_code %}
+            <details style="margin-top:8px;">
+              <summary class="muted" style="cursor:pointer; font-size:13px;">查看上次写的代码</summary>
+              <pre class="mono" style="background:#1e2532; color:#e6edf3; padding:10px 12px; border-radius:8px; font-size:12.5px; overflow-x:auto;">{{ w.last_code }}</pre>
+            </details>
+          {% endif %}
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-sm btn-primary" href="/problem/{{ w.problem_id }}">去攻克</a>
+          <button class="btn btn-sm" onclick="markMastered({{ w.problem_id }}, this)">标记掌握</button>
+          <button class="btn btn-sm btn-danger" onclick="removeWrong({{ w.problem_id }}, this)">移除</button>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <span class="ico">🎉</span>
+      错题本是空的，说明你最近状态不错！<br>
+      <a href="/problems">继续去刷题</a>
+    </div>
+  {% endif %}
+</div>
+
+{% if done %}
+<div class="card">
+  <h3>✅ 已掌握的错题（{{ done | length }}）</h3>
+  <table>
+    {% for w in done %}
+      <tr>
+        <td><a href="/problem/{{ w.problem_id }}">{{ w.title }}</a></td>
+        <td class="muted" style="width:100px;">{{ w.difficulty }}</td>
+        <td class="muted" style="width:110px; text-align:right;">{{ w.last_at[5:16] }}</td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function markMastered(pid, btn) {
+  const r = await post('/api/wrong/master', { pid: pid });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0 && btn) {
+    const row = btn.closest('.prow');
+    if (row) row.style.transition = '.3s', row.style.opacity = '0',
+      setTimeout(() => row.remove(), 300);
+  }
+}
+async function removeWrong(pid, btn) {
+  if (!confirm('确定把这道题移出错题本吗？')) return;
+  const r = await post('/api/wrong/remove', { pid: pid });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0 && btn) {
+    const row = btn.closest('.prow');
+    if (row) row.remove();
+  }
+}
+</script>
+{% endblock %}

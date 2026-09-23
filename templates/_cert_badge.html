@@ -1,0 +1,147 @@
+{#
+
+  认证页农耕主题徽章（纯 SVG，无第三方库）
+
+  用法：{% from "_cert_badge.html" import medal, wheat, field %}
+        {{ medal('medal', 64) | safe }}
+        {{ wheat(26, 'left') | safe }}
+        {{ field() | safe }}
+
+  medal 的 kind：
+    medal  已获得（金色奖牌 + 麦穗 + 丝带）
+    target 可参加（锄头 + 麦穗，田园绿）
+    lock   未解锁（灰锁 + 干麦穗）
+#}
+
+{# 单支麦穗：茎 + 左右对称麦粒 + 顶粒 #}
+{% macro wheat(size=26, cls='') %}
+<svg class="cb-wheat {{ cls }}" viewBox="0 0 32 48" width="{{ size }}" height="{{ size * 1.5 }}"
+     aria-hidden="true" focusable="false">
+  <path d="M16 44 V8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".9"/>
+  <g fill="currentColor">
+    <ellipse cx="11.2" cy="12" rx="4.4" ry="2.2" transform="rotate(-30 11.2 12)"/>
+    <ellipse cx="11.2" cy="19" rx="4.4" ry="2.2" transform="rotate(-30 11.2 19)"/>
+    <ellipse cx="11.2" cy="26" rx="4.4" ry="2.2" transform="rotate(-30 11.2 26)"/>
+    <ellipse cx="11.2" cy="33" rx="4.4" ry="2.2" transform="rotate(-30 11.2 33)"/>
+    <ellipse cx="20.8" cy="12" rx="4.4" ry="2.2" transform="rotate(30 20.8 12)"/>
+    <ellipse cx="20.8" cy="19" rx="4.4" ry="2.2" transform="rotate(30 20.8 19)"/>
+    <ellipse cx="20.8" cy="26" rx="4.4" ry="2.2" transform="rotate(30 20.8 26)"/>
+    <ellipse cx="20.8" cy="33" rx="4.4" ry="2.2" transform="rotate(30 20.8 33)"/>
+    <ellipse cx="16" cy="6.4" rx="2.3" ry="3.2"/>
+  </g>
+</svg>
+{% endmacro %}
+
+
+{# 奖牌徽章：圆形牌面 + 丝带 + 中心图案（麦穗 / 锄头 / 锁） #}
+{% macro medal(kind='lock', size=64) %}
+<svg class="cb-medal cb-{{ kind }}" viewBox="0 0 64 64" width="{{ size }}" height="{{ size }}"
+     aria-hidden="true" focusable="false">
+
+  {# 丝带（仅已获得时出现） #}
+  {% if kind == 'medal' %}
+  <path d="M24 40 L17 60 L26 55 L29 43 Z" fill="#b45309" opacity=".92"/>
+  <path d="M40 40 L47 60 L38 55 L35 43 Z" fill="#d97706" opacity=".92"/>
+  {% endif %}
+
+  {# 牌面 #}
+  <circle cx="32" cy="27" r="18"
+          fill="{% if kind == 'medal' %}#fde68a{% elif kind == 'target' %}#dcfce7{% else %}#f1f3f5{% endif %}"
+          stroke="{% if kind == 'medal' %}#b45309{% elif kind == 'target' %}#16a34a{% else %}#c9ced6{% endif %}"
+          stroke-width="2.5"/>
+  <circle cx="32" cy="27" r="14.5" fill="none"
+          stroke="{% if kind == 'medal' %}#f59e0b{% elif kind == 'target' %}#4ade80{% else %}#dfe3e8{% endif %}"
+          stroke-width="1.2" stroke-dasharray="3 3" opacity=".85"/>
+
+  {% if kind == 'medal' %}
+    {# 中心：麦穗（缩小居中） #}
+    <g transform="translate(32 27) scale(.52) translate(-16 -26)" fill="#b45309">
+      <path d="M16 44 V10" fill="none" stroke="#b45309" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="10.6" cy="14" rx="4.4" ry="2.2" transform="rotate(-30 10.6 14)"/>
+      <ellipse cx="10.6" cy="21" rx="4.4" ry="2.2" transform="rotate(-30 10.6 21)"/>
+      <ellipse cx="10.6" cy="28" rx="4.4" ry="2.2" transform="rotate(-30 10.6 28)"/>
+      <ellipse cx="21.4" cy="14" rx="4.4" ry="2.2" transform="rotate(30 21.4 14)"/>
+      <ellipse cx="21.4" cy="21" rx="4.4" ry="2.2" transform="rotate(30 21.4 21)"/>
+      <ellipse cx="21.4" cy="28" rx="4.4" ry="2.2" transform="rotate(30 21.4 28)"/>
+      <ellipse cx="16" cy="8.6" rx="2.3" ry="3.2"/>
+    </g>
+    <circle cx="32" cy="27" r="18" fill="none" stroke="#fef3c7" stroke-width="1" opacity=".9"/>
+  {% elif kind == 'target' %}
+    {# 中心：锄头（柄 + 锄刃） #}
+    <g stroke="#15803d" stroke-width="2.6" fill="none" stroke-linecap="round">
+      <path d="M23 38 L38 19"/>
+    </g>
+    <path d="M34 15 L43 22 L38 27 L29 20 Z" fill="#16a34a" stroke="#15803d"
+          stroke-width="1.6" stroke-linejoin="round"/>
+    <g fill="#4ade80" opacity=".95">
+      <ellipse cx="24" cy="34" rx="3.4" ry="1.8" transform="rotate(-40 24 34)"/>
+      <ellipse cx="28" cy="38" rx="3.4" ry="1.8" transform="rotate(-40 28 38)"/>
+    </g>
+  {% else %}
+    {# 中心：锁（未解锁） #}
+    <rect x="25" y="28" width="14" height="11" rx="2.4" fill="#dfe3e8" stroke="#9ca3af" stroke-width="1.6"/>
+    <path d="M27.5 28 V24.5 a4.5 4.5 0 0 1 9 0 V28" fill="none" stroke="#9ca3af" stroke-width="2"/>
+    <circle cx="32" cy="33.5" r="1.9" fill="#9ca3af"/>
+    <g fill="#d5d9df">
+      <ellipse cx="21" cy="18" rx="3" ry="1.5" transform="rotate(-30 21 18)"/>
+      <ellipse cx="43" cy="18" rx="3" ry="1.5" transform="rotate(30 43 18)"/>
+    </g>
+  {% endif %}
+</svg>
+{% endmacro %}
+
+
+{# 页头横幅：田垄 + 麦穗 + 日头（宽幅装饰，可横向拉伸） #}
+{% macro field() %}
+<svg class="cb-field" viewBox="0 0 720 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="cbSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf6e6"/>
+      <stop offset="1" stop-color="#f6fbf1"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="720" height="120" fill="url(#cbSky)"/>
+
+  {# 远山 #}
+  <path d="M0 74 L92 48 L166 74 L238 52 L320 74 L410 50 L500 74 L596 54 L680 74 L720 66 V120 H0 Z"
+        fill="#dcecd4" opacity=".8"/>
+
+  {# 日头 #}
+  <circle cx="648" cy="30" r="15" fill="#fde68a"/>
+  <g stroke="#fcd34d" stroke-width="2.4" stroke-linecap="round">
+    <path d="M648 8 V2"/><path d="M670 30 H676"/>
+    <path d="M663 15 L667.5 10.5"/><path d="M633 15 L628.5 10.5"/>
+  </g>
+
+  {# 田垄（三条弧线，越近越粗） #}
+  <g fill="none" stroke="#a7d08a" stroke-linecap="round">
+    <path d="M-10 96 Q 180 84 360 96 T 730 94" stroke-width="3" opacity=".55"/>
+    <path d="M-10 106 Q 180 94 360 106 T 730 104" stroke-width="4" opacity=".7"/>
+    <path d="M-10 116 Q 180 104 360 116 T 730 114" stroke-width="5" opacity=".85"/>
+  </g>
+
+  {# 两侧麦穗 #}
+  <g fill="#65a30d" opacity=".85">
+    <g transform="translate(44 46) scale(.62)">
+      <path d="M16 60 V16" fill="none" stroke="#65a30d" stroke-width="3"/>
+      <ellipse cx="10.6" cy="20" rx="4.4" ry="2.2" transform="rotate(-30 10.6 20)"/>
+      <ellipse cx="10.6" cy="29" rx="4.4" ry="2.2" transform="rotate(-30 10.6 29)"/>
+      <ellipse cx="10.6" cy="38" rx="4.4" ry="2.2" transform="rotate(-30 10.6 38)"/>
+      <ellipse cx="21.4" cy="20" rx="4.4" ry="2.2" transform="rotate(30 21.4 20)"/>
+      <ellipse cx="21.4" cy="29" rx="4.4" ry="2.2" transform="rotate(30 21.4 29)"/>
+      <ellipse cx="21.4" cy="38" rx="4.4" ry="2.2" transform="rotate(30 21.4 38)"/>
+      <ellipse cx="16" cy="13" rx="2.3" ry="3.2"/>
+    </g>
+    <g transform="translate(646 52) scale(.62)">
+      <path d="M16 60 V16" fill="none" stroke="#65a30d" stroke-width="3"/>
+      <ellipse cx="10.6" cy="20" rx="4.4" ry="2.2" transform="rotate(-30 10.6 20)"/>
+      <ellipse cx="10.6" cy="29" rx="4.4" ry="2.2" transform="rotate(-30 10.6 29)"/>
+      <ellipse cx="10.6" cy="38" rx="4.4" ry="2.2" transform="rotate(-30 10.6 38)"/>
+      <ellipse cx="21.4" cy="20" rx="4.4" ry="2.2" transform="rotate(30 21.4 20)"/>
+      <ellipse cx="21.4" cy="29" rx="4.4" ry="2.2" transform="rotate(30 21.4 29)"/>
+      <ellipse cx="21.4" cy="38" rx="4.4" ry="2.2" transform="rotate(30 21.4 38)"/>
+      <ellipse cx="16" cy="13" rx="2.3" ry="3.2"/>
+    </g>
+  </g>
+</svg>
+{% endmacro %}

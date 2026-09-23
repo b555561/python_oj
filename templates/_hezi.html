@@ -1,0 +1,75 @@
+{# 禾籽 —— 菜园分支里的小助手（一颗冒芽的种子），苗小秾的搭档
+   用法：{% from "_hezi.html" import hezi %}
+        {{ hezi(64) }}
+        {{ hezi_say("……", 56) }}
+#}
+
+{% macro hezi(size=64, cls='nan-wave') %}
+<svg class="nan {{ cls }}" width="{{ size }}" height="{{ size }}"
+     viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="禾籽">
+  <defs>
+    <radialGradient id="hzBody" cx="36%" cy="28%" r="80%">
+      <stop offset="0%"   stop-color="#FBEFCB"/>
+      <stop offset="52%"  stop-color="#F2D48A"/>
+      <stop offset="100%" stop-color="#D9A441"/>
+    </radialGradient>
+    <linearGradient id="hzLeaf" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%"   stop-color="#3E8E41"/>
+      <stop offset="100%" stop-color="#8FD97A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 地面投影 -->
+  <ellipse cx="60" cy="108" rx="30" ry="5" fill="#000" opacity="0.09"/>
+
+  <!-- 小手 -->
+  <ellipse cx="21" cy="86" rx="6.6" ry="8.4" fill="#E3B85C" transform="rotate(-24 21 86)"/>
+  <ellipse cx="99" cy="86" rx="6.6" ry="8.4" fill="#E3B85C" transform="rotate(24 99 86)"/>
+
+  <!-- 头顶冒出的小芽 -->
+  <g class="nan-leaf">
+    <path d="M59 36 C49 20 36 19 33 31 C43 26 53 30 58 41 Z" fill="url(#hzLeaf)"/>
+  </g>
+  <g class="nan-leaf nan-leaf-r">
+    <path d="M63 36 C73 20 86 19 89 31 C79 26 69 30 64 41 Z" fill="url(#hzLeaf)"/>
+  </g>
+  <path class="nan-leaf-mid" d="M61 34 C58 22 62 13 68 10 C68 19 66 27 63 35 Z" fill="#37823A"/>
+
+  <!-- 种子身体 -->
+  <path d="M60 40 C82 40 95 60 95 76 C95 96 79 104 60 104 C41 104 25 96 25 76
+           C25 60 38 40 60 40 Z" fill="url(#hzBody)"/>
+  <ellipse cx="46" cy="58" rx="11" ry="7.5" fill="#fff" opacity="0.38"
+           transform="rotate(-20 46 58)"/>
+
+  <!-- 种子上的纹路（禾） -->
+  <path d="M60 46 L60 100" stroke="#C89235" stroke-width="2" opacity="0.45"
+        stroke-linecap="round" fill="none"/>
+
+  <!-- 眼睛 -->
+  <g class="nan-eye">
+    <ellipse cx="49" cy="72" rx="5.2" ry="6.2" fill="#4A3A1C"/>
+    <circle cx="51" cy="69.6" r="2" fill="#fff"/>
+  </g>
+  <g class="nan-eye">
+    <ellipse cx="71" cy="72" rx="5.2" ry="6.2" fill="#4A3A1C"/>
+    <circle cx="73" cy="69.6" r="2" fill="#fff"/>
+  </g>
+
+  <!-- 腮红 -->
+  <ellipse cx="38" cy="82" rx="6" ry="3.9" fill="#FF9AA2" opacity="0.66"/>
+  <ellipse cx="82" cy="82" rx="6" ry="3.9" fill="#FF9AA2" opacity="0.66"/>
+
+  <!-- 微笑 -->
+  <path d="M55 84 Q60 89.5 65 84" stroke="#4A3A1C" stroke-width="2.2"
+        fill="none" stroke-linecap="round"/>
+</svg>
+{% endmacro %}
+
+{% macro hezi_say(text, size=56, cls='') %}
+{# cls='compact' → 紧凑版：头像更小、气泡更窄更低，给下方卡片让出空间 #}
+<div class="nan-row {{ cls }}">
+  <div class="nan-avatar">{{ hezi(size) | safe }}</div>
+  <div class="nan-say">{{ text | e }}</div>
+</div>
+{% endmacro %}

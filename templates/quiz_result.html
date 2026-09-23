@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}测验成绩 · Python 刷题平台{% endblock %}
+{% block content %}
+
+<div class="card" style="text-align:center; padding:36px 24px;">
+  <div style="font-size:46px;">{% if q.passed %}🎉{% else %}📋{% endif %}</div>
+  <h2 style="margin:8px 0 4px;">{{ q.title }}</h2>
+  <div style="font-size:34px; font-weight:700; margin:12px 0;">
+    {{ q.correct }} <span style="font-size:20px; color:var(--gray);">/ {{ q.total }}</span>
+  </div>
+  <div class="bar" style="max-width:420px; margin:10px auto;">
+    <i class="{% if q.passed %}green{% endif %}" style="width:{{ score }}%; background:{% if q.passed %}var(--success){% else %}var(--warn){% endif %}"></i>
+  </div>
+  <p class="muted">正确率 {{ score }}% · 用时约 {{ q.duration }} 分钟</p>
+  {% if q.passed %}
+    <div class="alert ok" style="max-width:420px; margin:16px auto 0;">达成目标，已获得经验奖励</div>
+  {% endif %}
+  <div class="btn-row" style="justify-content:center; margin-top:18px;">
+    <a class="btn btn-primary" href="/quiz">再来一套</a>
+    <a class="btn" href="/me">我的数据</a>
+  </div>
+</div>
+
+<div class="card">
+  <h2>逐题详情</h2>
+  {% for it in items %}
+    <div class="prow">
+      <span class="idx">{{ loop.index }}</span>
+      <span class="status-dot {% if it.status == 'accepted' %}dot-ac{% else %}dot-wrong{% endif %}"></span>
+      <a class="tt" href="/problem/{{ it.problem_id }}">{{ it.title }}</a>
+      <div class="meta">
+        <span class="badge badge-{{ it.difficulty }}">{{ diff_label.get(it.difficulty, it.difficulty) }}</span>
+        <span class="badge {% if it.status == 'accepted' %}badge-easy{% else %}badge-hard{% endif %}">
+          {% if it.status == 'accepted' %}通过{% else %}未通过{% endif %}</span>
+      </div>
+    </div>
+    {% if it.status != 'accepted' and it.code %}
+      <details style="margin:0 0 10px 46px;">
+        <summary class="muted" style="cursor:pointer; font-size:13px;">查看你提交的代码</summary>
+        <pre class="mono" style="background:#1e2532; color:#e6edf3; padding:10px 12px; border-radius:8px; font-size:12.5px; overflow-x:auto;">{{ it.code }}</pre>
+      </details>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% endblock %}

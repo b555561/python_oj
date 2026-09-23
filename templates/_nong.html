@@ -1,0 +1,85 @@
+{# 苗小序 —— 本站吉祥物（绿色小芽精灵）SVG 形象
+   用法：{% from "_nong.html" import nan %}
+        {{ nan(76) }}              静态头像
+        {{ nan(96, 'nan-wave') }}  带轻微上下浮动
+#}
+
+{% macro nan(size=76, cls='nan-wave') %}
+<svg class="nan {{ cls }}" width="{{ size }}" height="{{ size }}"
+     viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg"
+     role="img" aria-label="苗小序">
+  <defs>
+    <radialGradient id="ngBody" cx="38%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#A8E6A1"/>
+      <stop offset="55%" stop-color="#6FBF63"/>
+      <stop offset="100%" stop-color="#3E8E41"/>
+    </radialGradient>
+    <linearGradient id="ngLeaf" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#3E8E41"/>
+      <stop offset="100%" stop-color="#7FCB6E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 地面投影 -->
+  <ellipse cx="60" cy="108" rx="33" ry="5.5" fill="#000" opacity="0.09"/>
+
+  <!-- 侧手 -->
+  <ellipse cx="19" cy="84" rx="7.5" ry="9.5" fill="#57A95A"
+           transform="rotate(-22 19 84)"/>
+  <ellipse cx="101" cy="84" rx="7.5" ry="9.5" fill="#57A95A"
+           transform="rotate(22 101 84)"/>
+
+  <!-- 头顶三片嫩芽 -->
+  <g class="nan-leaf">
+    <path d="M59 34 C47 15 32 15 28 28 C39 22 51 27 57 40 Z" fill="url(#ngLeaf)"/>
+  </g>
+  <g class="nan-leaf nan-leaf-r">
+    <path d="M63 34 C75 15 90 15 94 28 C83 22 71 27 65 40 Z" fill="url(#ngLeaf)"/>
+  </g>
+  <path class="nan-leaf-mid" d="M61 31 C57 18 61 9 66 6 C67 15 65 24 63 32 Z" fill="#37823A"/>
+
+  <!-- 身体 -->
+  <ellipse cx="60" cy="71" rx="38" ry="33" fill="url(#ngBody)"/>
+  <!-- 顶部亮部 -->
+  <ellipse cx="45" cy="55" rx="13" ry="9" fill="#fff" opacity="0.32"
+           transform="rotate(-18 45 55)"/>
+
+  <!-- 眼睛 -->
+  <g class="nan-eye">
+    <ellipse cx="48" cy="69" rx="5.6" ry="6.6" fill="#2F3A2F"/>
+    <circle cx="50.2" cy="66.4" r="2.1" fill="#fff"/>
+    <circle cx="46" cy="71.5" r="1" fill="#fff" opacity="0.8"/>
+  </g>
+  <g class="nan-eye">
+    <ellipse cx="72" cy="69" rx="5.6" ry="6.6" fill="#2F3A2F"/>
+    <circle cx="74.2" cy="66.4" r="2.1" fill="#fff"/>
+    <circle cx="70" cy="71.5" r="1" fill="#fff" opacity="0.8"/>
+  </g>
+
+  <!-- 腮红 -->
+  <ellipse cx="35" cy="79" rx="6.4" ry="4.2" fill="#FF9AA2" opacity="0.72"/>
+  <ellipse cx="85" cy="79" rx="6.4" ry="4.2" fill="#FF9AA2" opacity="0.72"/>
+
+  <!-- 微笑 -->
+  <path d="M54 81 Q60 87.5 66 81" stroke="#2F3A2F" stroke-width="2.4"
+        fill="none" stroke-linecap="round"/>
+
+  <!-- 胸前小叶徽章 -->
+  <path d="M60 90 C55 90 51 93 51 96.5 C51 100 55 102 60 102 C65 102 69 100 69 96.5
+           C69 93 65 90 60 90 Z" fill="#fff" opacity="0.9"/>
+  <path d="M60 92.5 C57.5 94.5 56 96 56 97.5 C56 99.5 58 100.5 60 100.5
+           C62 100.5 64 99.5 64 97.5 C64 96 62.5 94.5 60 92.5 Z" fill="#4E9F50"/>
+
+  <!-- 小脚 -->
+  <ellipse cx="47" cy="102" rx="9.5" ry="6" fill="#4E9F50"/>
+  <ellipse cx="73" cy="102" rx="9.5" ry="6" fill="#4E9F50"/>
+</svg>
+{% endmacro %}
+
+{# 带对话气泡的一整行：苗小序 + 说的话 #}
+{% macro nan_say(text, size=64) %}
+<div class="nan-row">
+  <div class="nan-avatar">{{ nan(size) | safe }}</div>
+  <div class="nan-say">{{ text | e }}</div>
+</div>
+{% endmacro %}

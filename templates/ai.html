@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% block title %}苗小序 · AI 助教{% endblock %}
+{% block content %}
+
+<div class="card nan-card">
+  {% from "_nong.html" import nan_say %}
+  {{ nan_say("嗨～我是苗小序 🌱\n这个刷题网站的吉祥物，也是你的 Python 刷题搭子。\n\n你可以问我：\n• 「列表推导式到底怎么写？」\n• 「while 和 for 有什么区别？」\n• 「为什么我的函数返回 None？」\n\n卡在哪道题上了，尽管说～", 88) | safe }}
+</div>
+
+{% if ai_demo %}
+<div class="alert ok" style="margin-top:14px;">
+  🌱 当前是 <b>预设问答演示模式</b>：不联网、不调用 DeepSeek 接口，回答来自苗小序内置的答案库。
+  想让它真正自由发挥，到 <a href="/settings">设置</a> 页面填入 API Key，会自动切回真实对话。
+</div>
+{% elif not enabled %}
+<div class="alert" style="margin-top:14px;">
+  苗小序还没睡醒 —— 请到 <a href="/settings">设置</a> 页面开启 AI 助手或填入 DeepSeek API Key。
+  {% if has_key %}（已检测到 Key，但仍需确认已启用）{% endif %}
+</div>
+{% endif %}
+
+<div class="card" style="margin-top:14px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+    {{ nan(30, 'nan-wave') | safe }}
+    <h2 style="margin:0;">和苗小序聊聊</h2>
+  </div>
+  <p class="muted">
+    {% if ai_demo %}演示模式：内置答案库，问语法、问思路都有预设解答。
+    {% else %}由 DeepSeek 驱动。问语法、问思路、让它帮你看看代码为什么没通过。{% endif %}
+  </p>
+
+  <div class="chat-box" id="chat"></div>
+
+  <form onsubmit="send(event)" style="margin-top:12px;">
+    <div style="display:flex; gap:10px; align-items:flex-end;">
+      <textarea id="input" rows="2" placeholder="输入你的问题，按 Ctrl+Enter 发送" style="flex:1;"
+        {% if not enabled %}disabled{% endif %}></textarea>
+      <button class="btn btn-primary" type="submit" id="sendBtn"
+        {% if not enabled %}disabled{% endif %}>发送</button>
+    </div>
+  </form>
+
+  <div class="btn-row" style="margin-top:10px;">
+    <button class="btn btn-sm" onclick="ask('列表推导式怎么写？举个例子')">列表推导式</button>
+    <button class="btn btn-sm" onclick="ask('while 和 for 循环该怎么选？')">while vs for</button>
+    <button class="btn btn-sm" onclick="ask('为什么我的函数返回 None？')">返回 None</button>
+    <button class="btn btn-sm" onclick="ask('给我一份 Python 新手学习路线')">学习路线</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>快捷入口</h3>
+  <div class="btn-row">
+    <a class="btn btn-sm" href="/problems">去题库找题</a>
+    <a class="btn btn-sm" href="/wrongs">让苗小序分析我的错题</a>
+    <a class="btn btn-sm" href="/settings">配置 API Key</a>
+  </div>
+  <p class="muted" style="margin-top:10px;">
+    在题目详情页点击「🌱 苗小序讲思路」或「🌱 帮我看看哪错了」，
+    它会结合题目和你写的代码给出针对性建议。
+  </p>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CHAT = document.getElementById('chat');
+let history = [];
+
+function scrollBottom() { CHAT.scrollTop = CHAT.scrollHeight; }
+
+function addMe(text) {
+  const d = document.createElement('div');
+  d.className = 'msg me-row';
+  d.innerHTML = '<div class="bubble"></div>';
+  d.querySelector('.bubble').textContent = text;
+  CHAT.appendChild(d);
+  scrollBottom();
+}
+
+function addNan(text) {
+  const d = document.createElement('div');
+  d.className = 'nan-msg';
+  d.innerHTML =
+    '<div class="nan-avatar">' + NAN_SVG + '</div>' +
+    '<div class="bubble"></div>';
+  d.querySelector('.bubble').textContent = text;
+  CHAT.appendChild(d);
+  scrollBottom();
+  return d.querySelector('.bubble');
+}
+
+const NAN_SVG = `{{ nan(44, 'nan-wave') | replace('\n', ' ') | safe }}`;
+
+addNan('嗨～我是苗小序 🌱\n有什么 Python 上的问题，尽管问我吧！');
+
+function ask(q) {
+  document.getElementById('input').value = q;
+  document.getElementById('input').form.dispatchEvent(new Event('submit'));
+}
+
+async function send(e) {
+  e.preventDefault();
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text) return;
+  addMe(text);
+  input.value = '';
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  const pending = addNan('让我看看…… 🌱');
+
+  const r = await post('/api/ai/chat', {
+    message: text, action: 'chat', history: history
+  });
+  btn.disabled = false;
+  if (!r) { pending.textContent = '发送失败'; return; }
+  if (r.code !== 0) { pending.textContent = r.msg; return; }
+  pending.textContent = r.data.text;
+  history.push({ role: 'user', content: text });
+  history.push({ role: 'assistant', content: r.data.text });
+  if (history.length > 16) history = history.slice(-16);
+  scrollBottom();
+}
+
+document.getElementById('input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    document.getElementById('input').form.dispatchEvent(new Event('submit'));
+  }
+});
+</script>
+{% endblock %}

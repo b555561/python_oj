@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_nong.html" import nan %}
+{% block title %}{{ p.title }} · 学习圈{% endblock %}
+{% block content %}
+
+<div style="margin-bottom:12px;">
+  <a href="/circle" class="muted">← 返回学习圈</a>
+</div>
+
+<div class="card">
+  <h1 style="margin:0 0 6px; font-size:21px;">{{ p.icon }} {{ p.title }}</h1>
+  <div class="pmeta" style="font-size:13px; color:var(--gray); display:flex; gap:8px; flex-wrap:wrap;">
+    <strong>{{ p.nickname }}</strong>
+    <span class="pill">Lv.{{ p.lv }}</span>
+    <span class="pill">{{ p.category }}</span>
+    <span>{{ p.created_at[5:16] }}</span>
+    {% if p.mine %}<button class="icon-btn" onclick="delPost()">🗑️ 删除</button>{% endif %}
+  </div>
+
+  <div class="post-body">{{ p.content }}</div>
+
+  <div style="display:flex; gap:12px; align-items:center;">
+    {% if user %}
+      <button class="btn btn-sm {% if p.liked %}btn-primary{% endif %}" onclick="like(this)">
+        {% if p.liked %}❤️ 已赞{% else %}🤍 点赞{% endif %} <span class="n">{{ p.likes }}</span>
+      </button>
+    {% else %}
+      <span class="note">❤️ {{ p.likes }} 人觉得有用</span>
+    {% endif %}
+    <span class="note">💬 {{ p.comments|length }} 条评论</span>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px;">
+  <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+    {{ nan(30, 'nan-wave') | safe }}
+    <h2 style="margin:0;">评论</h2>
+  </div>
+
+  {% if user %}
+    <form onsubmit="comment(event)">
+      <textarea id="ctext" rows="3" placeholder="说点什么，或者问问作者～"
+                style="width:100%; padding:10px; border:1px solid var(--line); border-radius:8px;"></textarea>
+      <div style="margin-top:8px; display:flex; align-items:center; gap:10px;">
+        <button class="btn btn-primary btn-sm" type="submit">发送评论</button>
+        <span class="note">评论可得 ⚡2 能量（每天前 5 条）</span>
+      </div>
+    </form>
+  {% else %}
+    <p class="note"><a href="/login">登录</a> 后可以评论。</p>
+  {% endif %}
+
+  <div style="margin-top:14px;">
+    {% for c in p.comments %}
+      <div class="comment">
+        <div class="cwho"><strong>{{ c.nickname }}</strong> <span class="pill">Lv.{{ c.lv }}</span> · {{ c.time }}</div>
+        <div style="white-space:pre-wrap;">{{ c.content }}</div>
+      </div>
+    {% else %}
+      <div class="note">还没有评论，来抢沙发吧～</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PID = {{ p.id }};
+
+async function like(btn) {
+  const r = await post('/api/circle/like', { pid: PID });
+  if (!r) return;
+  if (r.code !== 0) { toast(r.msg); return; }
+  const d = r.data;
+  btn.classList.toggle('btn-primary', d.liked);
+  btn.innerHTML = (d.liked ? '❤️ 已赞' : '🤍 点赞') + ' <span class="n">' + d.likes + '</span>';
+}
+
+async function comment(e) {
+  e.preventDefault();
+  const text = document.getElementById('ctext').value.trim();
+  if (!text) { toast('请输入评论内容'); return; }
+  const r = await post('/api/circle/comment', { pid: PID, message: text });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.reload(), 700);
+}
+
+async function delPost() {
+  if (!confirm('确定删除这篇帖子吗？')) return;
+  const r = await post('/api/circle/delete', { pid: PID });
+  if (!r) return;
+  toast(r.msg);
+  if (r.code === 0) setTimeout(() => location.href = '/circle', 700);
+}
+</script>
+{% endblock %}

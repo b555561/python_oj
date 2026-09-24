@@ -14,11 +14,23 @@ import re
 import time
 import base64
 import mimetypes
+import urllib.parse
 import requests
 
 BASE = "http://127.0.0.1:8001"
 HEAD_TPL = ('<!-- 离线快照：由 tools/make_static_snapshot.py 生成，'
             'CSS/JS 已内联，可直接双击用浏览器打开 -->')
+
+# --slim 模式下大图的替身：一张田园配色的内联 SVG（自带文字说明，不依赖任何外部资源）
+_SVG = ('<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="240">'
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+        '<stop offset="0" stop-color="#eaf6e2"/><stop offset="1" stop-color="#cfe8c4"/>'
+        '</linearGradient></defs>'
+        '<rect width="1200" height="240" fill="url(#g)"/>'
+        '<text x="600" y="126" font-family="sans-serif" font-size="24" '
+        'fill="#5c8a4a" text-anchor="middle">'
+        '田园横幅图（完整图见本地站点）</text></svg>')
+PLACEHOLDER = "data:image/svg+xml;charset=utf-8," + urllib.parse.quote(_SVG)
 
 
 def inline_css(html, sess):
@@ -49,7 +61,13 @@ def inline_js(html, sess):
     return re.sub(r'<script[^>]+src=["\']([^"\']+)["\'][^>]*>\s*</script>', repl, html)
 
 
-def inline_img(html, sess):
+def inline_img(html, sess, max_bytes=None):
+    """图片转 data URI。
+
+    max_bytes 不为 None 时（--slim 模式）：超过该体积的图片不内联，
+    换成一张内联 SVG 占位图。目的是让快照「完全自包含」的同时把体积压下来——
+    之前全内联会到 2.1MB，预览面板加载超时被当成文件损坏。
+    """
     def repl(m):
         src = m.group(1)
         if src.startswith("data:") or src.startswith("http"):
@@ -59,6 +77,8 @@ def inline_img(html, sess):
             r = sess.get(url, timeout=10)
             if r.status_code != 200:
                 return m.group(0)
+            if max_bytes is not None and len(r.content) > max_bytes:
+                return m.group(0).replace(src, PLACEHOLDER)
             ctype = r.headers.get("content-type") or \
                 mimetypes.guess_type(url)[0] or "image/png"
             b64 = base64.b64encode(r.content).decode("ascii")
@@ -103,7 +123,8 @@ def main():
     html = inline_css(html, s)
     html = inline_js(html, s)
     light = "--no-img" in sys.argv
-    html = abs_img(html) if light else inline_img(html, s)
+    slim = "--slim" in sys.argv
+    html = abs_img(html) if light else inline_img(html, s, 120 * 1024 if slim else None)
     # 内联后残留的站内绝对链接改成可点击的完整地址（方便在快照里继续点）
     html = html.replace('href="/', 'href="%s/' % BASE)
     if "<head>" in html:
@@ -111,10 +132,16 @@ def main():
 
     with open(out, "w", encoding="utf-8") as f:
         f.write(html)
-    kind = "轻量快照（图片走本地服务）" if light else "自包含快照（图片已内联）"
-    print("已生成%s: %s  （%d 字节，CSS/JS 均内联）" % (kind, out, len(html)))
+    if light:
+        kind = "轻量快照（图片走本地服务，服务停了图会缺）"
+    elif slim:
+        kind = "精简自包含快照（大图用占位图，完全不依赖服务）"
+    else:
+        kind = "完整自包含快照（全部图片已内联，体积较大）"
+    print("已生成%s: %s  （%.0f KB）" % (kind, out, len(html.encode("utf-8")) / 1024))
     print("外部样式表残留:", html.count("rel=\"stylesheet\""),
-          "| 外部脚本残留:", html.count("<script src="))
+          "| 外部脚本残留:", html.count("<script src="),
+          "| 外部图片残留:", len(re.findall(r'src="(?!data:)(?!http)', html)))
 
 
 if __name__ == "__main__":

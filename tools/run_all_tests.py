@@ -17,11 +17,19 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(_HERE)
 sys.path.insert(0, _HERE)
 
+# Windows 控制台默认 GBK，汇总里的 ✅/❌ 会 UnicodeEncodeError 崩掉整个监控
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 SUITES = [
     "test_e2e.py", "test_social.py", "test_branch.py", "test_round4.py",
     "test_round5.py", "test_round7.py", "test_round8.py", "test_round9.py",
     "test_round10.py", "test_round11.py", "test_round12.py",
     "test_round13.py", "test_round14.py", "test_round15.py", "test_round16.py", "test_round17.py",
+    "test_round19.py", "test_round20.py",
 ]
 PY = os.path.join(ROOT, "ven", "Scripts", "python.exe")
 if not os.path.exists(PY):
@@ -34,7 +42,9 @@ MARK = re.compile(r"^\s*✗", re.M)
 
 
 def run_one(name: str):
-    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    # Windows 控制台默认 GBK，测试脚本里的 ✓/✗ 会 UnicodeEncodeError 崩掉
+    # → 必须同时给 PYTHONUTF8=1（只给 PYTHONIOENCODING 在部分终端里不生效）
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
     p = subprocess.run([PY, name], cwd=ROOT, capture_output=True,
                        text=True, encoding="utf-8", errors="replace", env=env)
     out = (p.stdout or "") + (p.stderr or "")

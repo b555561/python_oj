@@ -2,7 +2,7 @@
 {% from "_nong.html" import nan %}
 {% from "_mascot.html" import stage %}
 {% from "_energy_help.html" import energy_help %}
-{% block title %}苗小序的菜园{% endblock %}
+{% block title %}苗小序的农场{% endblock %}
 {% block content %}
 
 <!-- ============ 页头：只留「动画 + 能量值 + 操作」，不要气泡/说明/色块 ============ -->
@@ -20,7 +20,50 @@
   </div>
 </div>
 
-<div class="grid grid-2" style="margin-top:10px; align-items:start;">
+<!-- ============ 农场：自由建造（侧边栏配件 + 3D 地皮） ============ -->
+<div class="yard">
+  <aside class="yard-side">
+    <div class="yard-h">🧰 农场配件铺</div>
+    <div class="yard-hint">
+      用刷题攒下的能量买配件，买到手想摆哪儿就摆哪儿。<br>
+      没有任务、没有关卡、没有等级门槛；拆掉的东西会原样回到背包。
+    </div>
+    <div class="yard-cats" id="yardCats"></div>
+    <div class="yard-items" id="yardItems"></div>
+  </aside>
+
+  <div class="yard-main">
+    <div class="yard-bar">
+      <span class="yb-hand" id="yardHand" style="display:none;"></span>
+      <span class="yb-sel" id="yardSel" style="display:none;"></span>
+      <button type="button" class="yb-btn" id="yardErase">🧹 拆除模式</button>
+      <span class="yb-sp"></span>
+      <button type="button" class="yb-btn" id="yardZout" title="缩小">➖</button>
+      <button type="button" class="yb-btn" id="yardZin" title="放大">➕</button>
+      <button type="button" class="yb-btn" id="yardRot" title="转 90 度看">🔄 转视角</button>
+      <button type="button" class="yb-btn" id="yardReset" title="回到默认视角">🧭 复位</button>
+      <button type="button" class="yb-btn warn" id="yardClear">🗑 清空重来</button>
+    </div>
+
+    <div class="yard-view" id="yardView">
+      <div class="yard-stage" id="yardStage">
+        <div class="yard-ground"></div>
+        <div class="yard-cells" id="yardCells"></div>
+        <div class="yard-objs" id="yardObjs"></div>
+        <div class="yard-ghost" id="yardGhost"></div>
+      </div>
+    </div>
+
+    <div class="yard-foot" id="yardFoot"></div>
+  </div>
+</div>
+
+<script id="yard-data" type="application/json">{{ {
+  "grid": yard_grid, "board": yard_board, "own": yard_own, "items": yard_items,
+  "cats": yard_cats, "catalog": yard_items, "energy": energy
+} | tojson }}</script>
+
+<div class="grid grid-2" style="margin-top:16px; align-items:start;">
   <div class="card">
     <div style="display:flex; align-items:center; gap:8px;">
       <h2 style="margin:0;">🌱 作物图鉴</h2>

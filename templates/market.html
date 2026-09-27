@@ -5,7 +5,7 @@
 {% block title %}耘野果蔬摊{% endblock %}
 {% block content %}
 
-<!-- ============ 页头：只留「动画 + 金币 / 能量值 + 操作」 ============ -->
+<!-- ============ 页头：动画 + 金币 / 能量值 + 禾籽介绍 + 操作，一行排开 ============ -->
 <div class="sec-top">
   {{ stage('market', 88, sm=true) | safe }}
   <div class="sec-top-main">
@@ -13,15 +13,14 @@
     <span class="energy-tag">⚡ 能量 {{ energy }}</span>
     {{ energy_help() | safe }}
   </div>
+  {{ hezi_say("收成到手啦！卖给街坊能换金币，攒够了还能换回能量继续种地。\n"
+              "每成交一笔，我都给你讲一条做生意的小常识 —— 涨红跌绿，看准行情再出手 🌾", 40, 'compact inline') | safe }}
   <div class="sec-top-act">
     <button class="btn btn-primary btn-sm" onclick="sellAll()" {% if not stock %}disabled{% endif %}>
       💰 一键清空菜篮
     </button>
   </div>
 </div>
-
-{{ hezi_say("收成到手啦！卖给街坊能换金币，攒够了还能换回能量继续种地。\n"
-            "每成交一笔，我都给你讲一条做生意的小常识 —— 涨红跌绿，看准行情再出手 🌾", 40, 'compact') | safe }}
 
 <div class="grid grid-2" style="margin-top:10px; align-items:start;">
   <!-- ============ 全部作物行情牌 ============ -->

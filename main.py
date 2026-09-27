@@ -17,7 +17,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from core import db, auth, judge, ai, stats, social, farm, circle, market, kitchen
-from core import shop, contest, blessing
+from core import shop, contest, blessing, farmyard
 from core.seed import seed_problems, CATEGORIES
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -922,6 +922,7 @@ async def farm_page(request: Request):
     garden = farm.garden(u["id"])
     ready = sum(1 for p in garden if p["ready"])
     growing = sum(1 for p in garden if p["state"] == "growing")
+    farmyard.ensure(u["id"])          # 第一次进农场发开业礼，之后不再发
     return render(request, "farm.html", {
         "garden": garden,
         "shop": farm.shop(u["id"]),
@@ -934,6 +935,14 @@ async def farm_page(request: Request):
         "tips": farm_tip(ready, growing, db.energy_of(u["id"])),
         "rare": farm.rare_options(u["id"]),
         "ferts": [f for f in shop.ferts(u["id"]) if f["own"] > 0],
+        # ---- 农场（自由建造）----
+        "yard": farmyard.catalog(u["id"]),
+        "yard_own": farmyard.owned(u["id"]),
+        "yard_board": farmyard.board(u["id"]),
+        "yard_sum": farmyard.summary(u["id"]),
+        "yard_grid": farmyard.GRID,
+        "yard_items": farmyard.ITEMS,
+        "yard_cats": [{"key": k, "icon": i, "name": n} for k, i, n in farmyard.CATS],
     })
 
 
@@ -1006,6 +1015,65 @@ async def api_farm_harvest(request: Request, body: CodeBody):
 async def api_farm_harvest_all(request: Request):
     u = api_user(request)
     r = farm.harvest_all(u["id"])
+    return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
+
+
+# ==================== 农场：自由建造（买配件 / 摆 / 搬 / 拆） ====================
+class YardBuyBody(BaseModel):
+    """买配件：key=配件 key，n=数量（默认 1）。"""
+    key: str = ""
+    n: int = 1
+
+
+class YardPlaceBody(BaseModel):
+    """摆放：x,y=格子坐标，key=配件 key。"""
+    x: int = -1
+    y: int = -1
+    key: str = ""
+
+
+class YardMoveBody(BaseModel):
+    """搬动：从 (fx,fy) 搬到 (tx,ty)；目标格有东西就两者对调。"""
+    fx: int = -1
+    fy: int = -1
+    tx: int = -1
+    ty: int = -1
+
+
+@app.post("/api/yard/buy")
+async def api_yard_buy(request: Request, body: YardBuyBody):
+    u = api_user(request)
+    r = farmyard.buy(u["id"], (body.key or "").strip(), body.n)
+    return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
+
+
+@app.post("/api/yard/place")
+async def api_yard_place(request: Request, body: YardPlaceBody):
+    u = api_user(request)
+    r = farmyard.place(u["id"], body.x, body.y, (body.key or "").strip())
+    return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
+
+
+@app.post("/api/yard/move")
+async def api_yard_move(request: Request, body: YardMoveBody):
+    u = api_user(request)
+    r = farmyard.move(u["id"], body.fx, body.fy, body.tx, body.ty)
+    return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
+
+
+@app.post("/api/yard/remove")
+async def api_yard_remove(request: Request, body: YardPlaceBody):
+    """拆除：配件退回背包，不留任何惩罚。"""
+    u = api_user(request)
+    r = farmyard.remove(u["id"], body.x, body.y)
+    return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
+
+
+@app.post("/api/yard/clear")
+async def api_yard_clear(request: Request):
+    """整块地清空重来，配件全部退回背包。"""
+    u = api_user(request)
+    r = farmyard.clear(u["id"])
     return json_ok(r, r["msg"]) if r["ok"] else json_fail(r["msg"])
 
 

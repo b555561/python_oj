@@ -175,7 +175,7 @@ def main():
 
     print("\n=== 8. 原有功能仍在 ===")
     for path, kw in [("/problems", "题库"), ("/checkin", "打卡"), ("/circle", "学习圈"),
-                     ("/market", "耘野果蔬摊"), ("/kitchen", "厨房"), ("/farm", "苗小序的菜园"),
+                     ("/market", "耘野果蔬摊"), ("/kitchen", "厨房"), ("/farm", "苗小序的农场"),
                      ("/friends", "好友"), ("/quiz", "测验")]:
         rr = s.get(BASE + path, timeout=15)
         check(f"{path} 正常", rr.status_code == 200 and kw in rr.text, rr.status_code)

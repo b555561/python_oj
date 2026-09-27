@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Python 刷题平台{% endblock %}</title>
 <link rel="stylesheet" href="/static/css/style.css">
+<link rel="stylesheet" href="/static/css/farmyard.css">
+
 </head>
 <body data-onboard="{{ '1' if need_onboard else '0' }}">
 
@@ -91,7 +93,7 @@
     {{ navcard('/wrongs',    'wrongs',    '📕', '错题本') | safe }}
     {{ navcard('/favorites', 'favorites', '⭐', '收藏') | safe }}
     {{ navcard('/checkin',   'checkin',   '📅', '打卡') | safe }}
-    {{ navcard('/farm',      'farm',      '🌱', '菜园', ready_crops) | safe }}
+    {{ navcard('/farm',      'farm',      '🌱', '农场', ready_crops) | safe }}
     {{ navcard('/shop',      'shop',      '🪴', '种子商店') | safe }}
     {{ navcard('/market',    'market',    '🧺', '果蔬摊') | safe }}
     {{ navcard('/kitchen',   'kitchen',   '🍳', '厨房') | safe }}
@@ -252,6 +254,7 @@
 <script src="/static/js/welcome.js"></script>
 <script src="/static/js/onboard.js"></script>
 <script src="/static/js/energy_help.js"></script>
+<script src="/static/js/farmyard.js"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

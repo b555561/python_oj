@@ -2199,3 +2199,12 @@ tbody tr:hover { background: #fafbfc; }
 .nan-row.compact .nan-say::before {
   left: -6px; top: 12px; width: 10px; height: 10px;
 }
+
+/* ---------- 禾籽气泡并入页头条：与苗小序动画同一行（果蔬摊 / 厨房） ---------- */
+.nan-row.inline { flex: 1 1 260px; min-width: 0; margin: 0; gap: 8px; align-items: center; }
+.nan-row.inline .nan-avatar { flex: 0 0 auto; }
+.nan-row.inline .nan-say { flex: 1 1 auto; min-width: 0; }
+/* 窄屏放不下就整行落到下面，不挤坏页头 */
+@media (max-width: 820px) {
+  .nan-row.inline { flex-basis: 100%; order: 3; margin-top: 4px; }
+}

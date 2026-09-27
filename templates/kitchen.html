@@ -5,18 +5,17 @@
 {% block title %}厨房 · 把收成做成菜{% endblock %}
 {% block content %}
 
-<!-- ============ 页头：只留「动画 + 能量值」 ============ -->
+<!-- ============ 页头：动画 + 能量值 + 禾籽介绍，一行排开 ============ -->
 <div class="sec-top">
   {{ stage('kitchen', 88, sm=true) | safe }}
   <div class="sec-top-main">
     <span class="energy-tag">⚡ 能量 {{ energy }}</span>
     {{ energy_help() | safe }}
   </div>
+  {{ hezi_say("别急着生吃呀～做成菜能换更多能量，还能学到真东西。\n"
+              "每道菜出锅，我都给你讲一条食品科学：为什么番茄要放油炒、为什么豆浆会假沸……\n"
+              "做完记得发布到学习圈，让同学也闻闻香 🍽️", 40, 'compact inline') | safe }}
 </div>
-
-{{ hezi_say("别急着生吃呀～做成菜能换更多能量，还能学到真东西。\n"
-            "每道菜出锅，我都给你讲一条食品科学：为什么番茄要放油炒、为什么豆浆会假沸……\n"
-            "做完记得发布到学习圈，让同学也闻闻香 🍽️", 40, 'compact') | safe }}
 
 <!-- ============ 菜谱卡片 ============ -->
 <div class="card" style="margin-top:10px;">

@@ -164,8 +164,8 @@ check("_hezi.html 支持 compact 参数", "cls='compact'" in src_hezi or 'cls="c
 check("果蔬摊调用 compact", "nan-row compact" in market)
 check("厨房调用 compact", "nan-row compact" in kitchen)
 check("商店也用紧凑气泡", "compact" in src_shop)
-check("气泡头像缩小（40 而非 60）", ", 40, 'compact'" in src_market
-      and ", 40, 'compact'" in src_kitchen)
+check("气泡头像缩小（40 而非 60）", ", 40, 'compact" in src_market
+      and ", 40, 'compact" in src_kitchen)
 check("CSS 定义 .nan-row.compact", ".nan-row.compact" in css)
 _c = css.split(".nan-row.compact .nan-say {")[1].split("}")[0]
 check("紧凑气泡内边距更小（7px 11px）", "7px 11px" in _c, _c)

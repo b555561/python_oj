@@ -308,6 +308,25 @@ CREATE TABLE IF NOT EXISTS items (
 );
 CREATE INDEX IF NOT EXISTS idx_item_user ON items(user_id);
 
+-- 农场：配件库存（买到的配件，还没摆出去的）
+CREATE TABLE IF NOT EXISTS farm_own (
+    user_id  INTEGER NOT NULL,
+    item_key TEXT NOT NULL,
+    qty      INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY(user_id, item_key)
+);
+
+-- 农场：地皮上的摆放（一格一个，自由摆放）
+CREATE TABLE IF NOT EXISTS farm_decor (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id  INTEGER NOT NULL,
+    x        INTEGER NOT NULL,
+    y        INTEGER NOT NULL,
+    item_key TEXT NOT NULL,
+    UNIQUE(user_id, x, y)
+);
+CREATE INDEX IF NOT EXISTS idx_decor_user ON farm_decor(user_id);
+
 -- 菜园收获流水（大赛统计耕耘分用）
 CREATE TABLE IF NOT EXISTS farm_log (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
